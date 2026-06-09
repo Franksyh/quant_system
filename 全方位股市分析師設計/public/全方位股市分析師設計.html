@@ -8,9 +8,9 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f5f6f2;
+      --bg: #f3f5f1;
       --panel: #ffffff;
-      --panel-soft: #f8faf8;
+      --panel-soft: #f8faf6;
       --ink: #17201d;
       --muted: #65726d;
       --line: #dfe4df;
@@ -18,11 +18,13 @@
       --accent: #007777;
       --accent-dark: #07575b;
       --accent-soft: #e1f1ef;
+      --blue-soft: #e8f0fa;
+      --blue: #225b8f;
       --rise: #c43232;
       --fall: #168156;
       --warning: #ad6b0a;
       --purple: #6654b8;
-      --shadow: 0 16px 38px rgba(29, 40, 36, 0.08);
+      --shadow: 0 10px 26px rgba(29, 40, 36, 0.07);
     }
 
     * {
@@ -32,7 +34,9 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: var(--bg);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(243, 245, 241, 0.92)),
+        var(--bg);
       color: var(--ink);
       font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -54,9 +58,9 @@
     }
 
     .app {
-      width: min(1480px, calc(100% - 32px));
+      width: min(1280px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 18px 0 36px;
+      padding: 14px 0 36px;
     }
 
     .topbar {
@@ -64,10 +68,10 @@
       top: 0;
       z-index: 40;
       display: grid;
-      grid-template-columns: minmax(230px, 0.72fr) minmax(360px, 1.45fr) minmax(290px, 0.9fr);
-      gap: 14px;
+      grid-template-columns: minmax(220px, 0.7fr) minmax(360px, 1.35fr) auto;
+      gap: 12px;
       align-items: center;
-      padding: 12px 0;
+      padding: 10px 0 12px;
       background: rgba(245, 246, 242, 0.94);
       backdrop-filter: blur(14px);
     }
@@ -93,7 +97,7 @@
 
     .brand h1 {
       margin: 0;
-      font-size: clamp(20px, 2.1vw, 30px);
+      font-size: clamp(19px, 1.7vw, 26px);
       line-height: 1.05;
       letter-spacing: 0;
       white-space: nowrap;
@@ -241,11 +245,11 @@
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding: 8px 0 14px;
+      padding: 4px 0 12px;
     }
 
     .tab {
-      min-width: 112px;
+      min-width: 96px;
       color: var(--muted);
     }
 
@@ -268,7 +272,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin: 0 0 14px;
+      margin: 4px 0 12px;
       color: var(--muted);
       font-size: 13px;
     }
@@ -279,7 +283,7 @@
     }
 
     .dashboard-grid {
-      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
       align-items: start;
     }
 
@@ -306,6 +310,58 @@
       padding: 16px;
     }
 
+    .focus-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .focus-card {
+      min-height: 118px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .focus-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .focus-value {
+      margin-top: 10px;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+
+    .focus-value .badge {
+      max-width: 100%;
+      min-height: 34px;
+      border-radius: 8px;
+      justify-content: flex-start;
+      padding: 7px 10px;
+      font-size: 18px;
+      line-height: 1.18;
+      white-space: normal;
+      text-align: left;
+    }
+
+    .focus-note {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
     .section-head {
       display: flex;
       align-items: center;
@@ -330,7 +386,7 @@
     }
 
     .kpi {
-      min-height: 128px;
+      min-height: 116px;
       padding: 14px;
     }
 
@@ -356,8 +412,8 @@
     }
 
     .price {
-      margin-top: 13px;
-      font-size: 24px;
+      margin-top: 11px;
+      font-size: 22px;
       font-weight: 900;
       line-height: 1;
     }
@@ -452,7 +508,7 @@
 
     .asset-card {
       width: 100%;
-      min-height: 158px;
+      min-height: 142px;
       padding: 14px;
       text-align: left;
       color: var(--ink);
@@ -467,8 +523,8 @@
     .score-ring {
       display: inline-grid;
       place-items: center;
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: 3px solid var(--accent);
       color: var(--accent-dark);
@@ -512,7 +568,7 @@
 
     .news-item {
       display: block;
-      min-height: 78px;
+      min-height: 68px;
       padding: 12px;
     }
 
@@ -761,7 +817,8 @@
       }
 
       .kpi-grid,
-      .asset-grid {
+      .asset-grid,
+      .focus-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -786,6 +843,7 @@
 
       .kpi-grid,
       .asset-grid,
+      .focus-strip,
       .macro-list,
       .hot-list,
       .detail-metrics,
@@ -853,6 +911,8 @@
           <span>教育用途，請自行控管風險</span>
         </div>
 
+        <div id="focusStrip" class="focus-strip"></div>
+
         <div id="kpiGrid" class="grid kpi-grid"></div>
 
         <div class="grid dashboard-grid" style="margin-top:14px">
@@ -861,7 +921,7 @@
               <div class="section-head">
                 <div class="section-title">
                   <i data-lucide="radar"></i>
-                  <h2>飆股建議</h2>
+                  <h2>焦點候選</h2>
                 </div>
                 <div class="segmented" id="hotFilter">
                   <button class="active" data-price-range="all" type="button">全部</button>
@@ -895,7 +955,7 @@
             </section>
 
             <section class="notice">
-              系統使用 Yahoo Finance search/chart 回傳的代號、名稱、價格、外匯與指數資料，買點與賣點為規則式技術分析估算，非保證獲利訊號。
+              系統使用 Yahoo Finance chart/search 資料；技術訊號僅供研究，不是保證獲利或投資建議。
             </section>
           </aside>
         </div>
@@ -1105,6 +1165,7 @@
       autoButton: document.querySelector("#autoButton"),
       macroSummary: document.querySelector("#macroSummary"),
       overallBadge: document.querySelector("#overallBadge"),
+      focusStrip: document.querySelector("#focusStrip"),
       kpiGrid: document.querySelector("#kpiGrid"),
       hotList: document.querySelector("#hotList"),
       macroList: document.querySelector("#macroList"),
@@ -1224,6 +1285,7 @@
       els.overallBadge.textContent = data.macro?.overall || "--";
       els.overallBadge.className = `badge ${toneClass(data.macro?.overall)}`;
 
+      renderFocusStrip();
       renderKpis(data.groups?.indices || []);
       renderHotList();
       renderMacroList();
@@ -1236,7 +1298,12 @@
     }
 
     function renderKpis(items) {
-      const visible = items.filter((item) => item.ok).slice(0, 8);
+      const priority = ["^TWII", "^GSPC", "^IXIC", "^TNX"];
+      const valid = items.filter((item) => item.ok);
+      const visible = [
+        ...priority.map((symbol) => valid.find((item) => item.symbol === symbol)).filter(Boolean),
+        ...valid.filter((item) => !priority.includes(item.symbol)),
+      ].slice(0, 4);
       els.kpiGrid.innerHTML = visible.map((item) => `
         <button class="kpi" type="button" data-symbol="${escapeAttr(item.symbol)}">
           <div class="kpi-top">
@@ -1258,10 +1325,52 @@
       });
     }
 
+    function renderFocusStrip() {
+      const data = state.dashboard;
+      const trending = (data?.trending || []).filter((item) => item.ok);
+      const top = trending[0];
+      const risk = (data?.macro?.signals || [])
+        .filter((signal) => signal.tone === "看跌")
+        .sort((a, b) => Math.abs(Number(b.changePercent || 0)) - Math.abs(Number(a.changePercent || 0)))[0];
+      const overall = data?.macro?.overall || "--";
+
+      const cards = [
+        {
+          icon: "compass",
+          label: "市場結論",
+          value: overall,
+          note: compactSummary(data?.macro?.summary || "等待市場資料。"),
+          tone: toneClass(overall),
+        },
+        {
+          icon: "target",
+          label: "焦點標的",
+          value: top ? `${top.symbol} ${top.name}` : "--",
+          note: top ? `${top.action || "觀察"}，分數 ${Number.isFinite(top.score) ? top.score : "--"}，${formatChange(top)}` : "尚無候選標的。",
+          tone: actionClass(top?.action),
+        },
+        {
+          icon: "shield-alert",
+          label: "主要風險",
+          value: risk?.title || "暫無明顯風險",
+          note: risk ? `${risk.tone} ${formatSignedPercent(risk.changePercent)}，${risk.note}` : "目前宏觀訊號未出現明顯單一壓力。",
+          tone: toneClass(risk?.tone),
+        },
+      ];
+
+      els.focusStrip.innerHTML = cards.map((card) => `
+        <section class="focus-card">
+          <div class="focus-label"><i data-lucide="${card.icon}"></i>${escapeHtml(card.label)}</div>
+          <div class="focus-value"><span class="badge ${card.tone}">${escapeHtml(card.value)}</span></div>
+          <p class="focus-note">${escapeHtml(card.note)}</p>
+        </section>
+      `).join("");
+    }
+
     function renderHotList() {
       const items = (state.dashboard?.trending || [])
         .filter((item) => matchesPriceRange(item, state.hotRange))
-        .slice(0, 8);
+        .slice(0, 4);
 
       if (!items.length) {
         els.hotList.innerHTML = `<div class="empty">目前沒有符合價格區間的飆股候選。</div>`;
@@ -1273,7 +1382,7 @@
     }
 
     function renderMacroList() {
-      const signals = state.dashboard?.macro?.signals || [];
+      const signals = (state.dashboard?.macro?.signals || []).slice(0, 4);
       if (!signals.length) {
         els.macroList.innerHTML = `<div class="empty">尚無宏觀訊號。</div>`;
         return;
@@ -1375,7 +1484,7 @@
         container.innerHTML = `<div class="empty">目前沒有新聞資料。</div>`;
         return;
       }
-      container.innerHTML = news.slice(0, 8).map((item) => `
+      container.innerHTML = news.slice(0, 5).map((item) => `
         <a class="news-item" href="${escapeAttr(item.link)}" target="_blank" rel="noreferrer">
           <div class="news-title">${escapeHtml(item.title)}</div>
           <div class="news-meta">${escapeHtml(item.publisher || "Yahoo Finance")} · ${item.publishedAt ? formatDateTime(item.publishedAt) : ""}</div>
@@ -1638,6 +1747,12 @@
         minute: "2-digit",
         hour12: false,
       }).format(new Date(value));
+    }
+
+    function compactSummary(value) {
+      const text = String(value || "").trim();
+      if (text.length <= 52) return text;
+      return `${text.slice(0, 52)}...`;
     }
 
     function tickClock() {
