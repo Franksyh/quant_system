@@ -198,6 +198,19 @@
       gap: 8px;
     }
 
+    .remote-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .connection-badge {
+      border-color: rgba(34, 91, 143, 0.18);
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
     .btn,
     .icon-btn,
     .segmented button,
@@ -772,6 +785,43 @@
       color: #754600;
     }
 
+    .mobile-dock {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+      z-index: 90;
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 12px 30px rgba(23, 32, 29, 0.18);
+      backdrop-filter: blur(14px);
+    }
+
+    .mobile-dock button {
+      display: inline-flex;
+      min-width: 0;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .mobile-dock button.active,
+    .mobile-dock button:active {
+      background: var(--ink);
+      color: white;
+    }
+
     .error-box {
       display: none;
       border: 1px solid rgba(196, 50, 50, 0.22);
@@ -824,12 +874,69 @@
     }
 
     @media (max-width: 720px) {
+      body {
+        padding-bottom: 74px;
+      }
+
       .app {
         width: min(100% - 18px, 1480px);
+        padding-top: 8px;
       }
 
       .brand h1 {
         white-space: normal;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+      }
+
+      .actions,
+      .remote-tools {
+        width: 100%;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: center;
+      }
+
+      .actions #refreshButton,
+      .actions #autoButton {
+        display: none;
+      }
+
+      .remote-tools {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 8px;
+      }
+
+      .remote-tools .btn {
+        width: 44px;
+        padding: 0;
+      }
+
+      .remote-tools .btn span,
+      .actions #autoButton span {
+        display: none;
+      }
+
+      .connection-badge {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .meta-line {
+        display: grid;
+        gap: 3px;
+        width: 100%;
+      }
+
+      .meta-line div {
+        min-width: 0;
       }
 
       .search-row,
@@ -859,7 +966,21 @@
       }
 
       .dialog {
-        max-height: 94vh;
+        width: 100%;
+        max-height: calc(100vh - 20px);
+      }
+
+      .dialog-body {
+        max-height: calc(100vh - 96px);
+      }
+
+      .mobile-dock {
+        display: grid;
+      }
+
+      .mobile-dock button {
+        flex-direction: column;
+        gap: 2px;
       }
     }
   </style>
@@ -887,6 +1008,10 @@
       <div class="actions">
         <button id="refreshButton" class="icon-btn" type="button" title="重新整理"><i data-lucide="refresh-cw"></i></button>
         <button id="autoButton" class="btn soft" type="button" aria-pressed="true"><i data-lucide="timer-reset"></i><span>自動更新</span></button>
+        <div class="remote-tools">
+          <span id="connectionBadge" class="badge connection-badge">連線檢查</span>
+          <button id="shareButton" class="btn" type="button" title="複製或分享遠端連結"><i data-lucide="link"></i><span>遠端連結</span></button>
+        </div>
         <div class="meta-line">
           <div id="clock">--</div>
           <div id="refreshedAt">等待資料</div>
@@ -1140,6 +1265,13 @@
     </div>
   </div>
 
+  <nav class="mobile-dock" aria-label="手機快速操作">
+    <button class="active" data-mobile-tab="dashboard" type="button"><i data-lucide="layout-dashboard"></i><span>首頁</span></button>
+    <button data-mobile-tab="stocks" type="button"><i data-lucide="candlestick-chart"></i><span>股票</span></button>
+    <button data-mobile-action="search" type="button"><i data-lucide="search"></i><span>搜尋</span></button>
+    <button data-mobile-action="refresh" type="button"><i data-lucide="refresh-cw"></i><span>更新</span></button>
+  </nav>
+
   <script>
     const API_BASE = location.protocol === "file:" ? "http://localhost:3000" : "";
     const AUTO_REFRESH_MS = 5 * 60 * 1000;
@@ -1163,6 +1295,8 @@
       searchResults: document.querySelector("#searchResults"),
       refreshButton: document.querySelector("#refreshButton"),
       autoButton: document.querySelector("#autoButton"),
+      connectionBadge: document.querySelector("#connectionBadge"),
+      shareButton: document.querySelector("#shareButton"),
       macroSummary: document.querySelector("#macroSummary"),
       overallBadge: document.querySelector("#overallBadge"),
       focusStrip: document.querySelector("#focusStrip"),
@@ -1178,6 +1312,7 @@
       fxFrom: document.querySelector("#fxFrom"),
       fxTo: document.querySelector("#fxTo"),
       fxResult: document.querySelector("#fxResult"),
+      mobileDock: document.querySelector(".mobile-dock"),
       detailModal: document.querySelector("#detailModal"),
       closeModal: document.querySelector("#closeModal"),
       detailLoading: document.querySelector("#detailLoading"),
@@ -1207,6 +1342,7 @@
         if (state.autoRefresh) startAutoRefresh();
         else stopAutoRefresh();
       });
+      els.shareButton.addEventListener("click", shareRemoteLink);
 
       els.searchButton.addEventListener("click", runSearch);
       els.searchInput.addEventListener("keydown", (event) => {
@@ -1247,6 +1383,24 @@
       });
 
       [els.fxAmount, els.fxFrom, els.fxTo].forEach((element) => element.addEventListener("input", renderFxConverter));
+
+      els.mobileDock.addEventListener("click", (event) => {
+        const tabButton = event.target.closest("button[data-mobile-tab]");
+        if (tabButton) {
+          switchTab(tabButton.dataset.mobileTab);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+
+        const actionButton = event.target.closest("button[data-mobile-action]");
+        if (!actionButton) return;
+        if (actionButton.dataset.mobileAction === "search") {
+          els.searchInput.focus();
+          els.searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        if (actionButton.dataset.mobileAction === "refresh") refreshDashboard();
+      });
+
       els.closeModal.addEventListener("click", closeDetail);
       els.detailModal.addEventListener("click", (event) => {
         if (event.target === els.detailModal) closeDetail();
@@ -1267,7 +1421,9 @@
         const data = await apiGet("/api/dashboard");
         state.dashboard = data;
         renderDashboard();
+        updateConnectionStatus(true);
       } catch (error) {
+        updateConnectionStatus(false);
         showError(`${error.message}。請先在專案資料夾執行 npm start，再開啟 http://localhost:3000/。`);
       } finally {
         state.loading = false;
@@ -1645,6 +1801,9 @@
       document.querySelectorAll(".panel").forEach((panel) => {
         panel.classList.toggle("active", panel.id === `panel-${tab}`);
       });
+      document.querySelectorAll("[data-mobile-tab]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.mobileTab === tab);
+      });
     }
 
     function activateSegment(activeButton) {
@@ -1671,6 +1830,44 @@
         throw new Error(data?.error || `API 回應 ${response.status}`);
       }
       return data;
+    }
+
+    async function shareRemoteLink() {
+      const url = location.href;
+      const title = document.title || "全方位股市分析師";
+      try {
+        if (navigator.share && location.protocol !== "file:") {
+          await navigator.share({ title, url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          showConnectionMessage("連結已複製");
+        }
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        showConnectionMessage("無法複製連結");
+      }
+    }
+
+    function updateConnectionStatus(online) {
+      if (online) {
+        const remote = location.protocol === "https:" || location.hostname.endsWith("netlify.app");
+        els.connectionBadge.textContent = remote ? "遠端連線正常" : "本機連線正常";
+        els.connectionBadge.className = "badge connection-badge";
+        return;
+      }
+
+      els.connectionBadge.textContent = "連線中斷";
+      els.connectionBadge.className = "badge sell";
+    }
+
+    function showConnectionMessage(message) {
+      const previous = els.connectionBadge.textContent;
+      els.connectionBadge.textContent = message;
+      window.setTimeout(() => {
+        if (els.connectionBadge.textContent === message) {
+          els.connectionBadge.textContent = previous;
+        }
+      }, 1600);
     }
 
     function matchesPriceRange(item, range) {
