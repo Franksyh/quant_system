@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102433">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Quant Trade">
+  <link rel="manifest" href="../manifest.webmanifest">
   <title>Quant System 策略與 TG 控制台</title>
   <style>
     :root {
@@ -34,6 +38,7 @@
       min-height: 100vh;
       background: var(--bg);
       color: var(--ink);
+      overflow-x: hidden;
     }
 
     button,
@@ -52,6 +57,8 @@
       display: grid;
       grid-template-columns: 304px minmax(0, 1fr);
       min-height: 100vh;
+      width: 100%;
+      max-width: 100vw;
     }
 
     .sidebar {
@@ -101,6 +108,7 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
+      min-width: 0;
     }
 
     .section h2,
@@ -151,6 +159,7 @@
       outline: none;
       padding: 10px 11px;
       transition: border-color .15s, box-shadow .15s;
+      min-width: 0;
     }
 
     textarea {
@@ -635,6 +644,44 @@
       line-height: 1.45;
     }
 
+    .remote-url {
+      min-height: 42px;
+      padding: 10px 11px;
+      border: 1px dashed #b8c2cc;
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--ink);
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .platform {
+      min-height: 58px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .platform strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
     .split-fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -666,6 +713,20 @@
     @media (max-width: 720px) {
       .workspace {
         padding: 14px;
+        width: 100%;
+        max-width: 100vw;
+      }
+
+      .sidebar {
+        width: 100%;
+        max-width: 100vw;
+      }
+
+      .section,
+      .panel,
+      .remote-url,
+      .command-preview {
+        max-width: 100%;
       }
 
       .topbar {
@@ -681,6 +742,7 @@
       .strategy-grid,
       .image-strip,
       .decision-strip,
+      .platform-grid,
       .split-fields {
         grid-template-columns: 1fr;
       }
@@ -691,6 +753,21 @@
 
       .row .btn:not(.icon-only) {
         flex: 1 1 150px;
+      }
+
+      .sidebar .row,
+      .command-box .row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .input-action {
+        grid-template-columns: 1fr;
+      }
+
+      .input-action .icon-only {
+        width: 100%;
+        flex-basis: auto;
       }
     }
   </style>
@@ -735,6 +812,27 @@
         <div class="notice">
           <strong>安全提示</strong>
           Token 只保存在這台瀏覽器；請不要把 `.env` 或 `.env.txt` 推上 GitHub。
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>遠端連線</h2>
+        <div class="remote-url" id="remoteUrlText">尚未取得遠端網址</div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn secondary" id="copyRemoteBtn" type="button" title="複製遠端網址">
+            <i data-lucide="copy"></i><span>複製</span>
+          </button>
+          <button class="btn blue" id="shareRemoteBtn" type="button" title="分享遠端網址">
+            <i data-lucide="share-2"></i><span>分享</span>
+          </button>
+        </div>
+        <button class="btn green" id="testRemoteBtn" type="button" title="測試遠端 API 連線" style="width:100%; margin-top:8px;">
+          <i data-lucide="wifi"></i><span>測試遠端連線</span>
+        </button>
+        <div class="platform-grid">
+          <div class="platform"><strong>手機</strong>瀏覽器開啟或分享網址</div>
+          <div class="platform"><strong>電腦</strong>桌機/筆電遠端操作</div>
+          <div class="platform"><strong>網頁</strong>Netlify API 動態分析</div>
         </div>
       </section>
 
@@ -834,6 +932,8 @@
         <div class="status-line">
           <span class="pill">策略 <strong id="activeStrategyText">vcp</strong></span>
           <span class="pill">資料 <strong id="dataCountText">0</strong> 根</span>
+          <span class="pill">遠端 <strong id="remoteStateText">待測試</strong></span>
+          <span class="pill">API <strong id="apiStateText">待連線</strong></span>
           <span class="pill">TG <strong id="tgStateText">未設定</strong></span>
         </div>
       </div>
@@ -1049,6 +1149,55 @@
       const chatId = $("#tgChatId").value.trim();
       $("#tgStateText").textContent = token && chatId ? "已設定" : "未設定";
       updateDecisionSummary(latestResult);
+    }
+
+    function getRemoteUrl() {
+      if (window.location.protocol === "file:") {
+        return "";
+      }
+      return new URL("/app", window.location.origin).href;
+    }
+
+    function updateRemotePanel() {
+      const remoteUrl = getRemoteUrl();
+      const remoteText = $("#remoteUrlText");
+      const remoteState = $("#remoteStateText");
+      if (!remoteUrl) {
+        remoteText.textContent = "目前為本機檔案模式；部署到 Netlify 後會產生手機、電腦、網頁皆可開啟的遠端網址。";
+        remoteState.textContent = "本機模式";
+        remoteState.style.color = "var(--amber)";
+        return;
+      }
+      remoteText.textContent = remoteUrl;
+      remoteState.textContent = "可連線";
+      remoteState.style.color = "var(--green)";
+    }
+
+    async function testRemoteConnection() {
+      if (window.location.protocol === "file:") {
+        $("#remoteStateText").textContent = "本機模式";
+        $("#remoteStateText").style.color = "var(--amber)";
+        addLog("目前是本機檔案模式；部署到 Netlify 後即可測試遠端 API", "bad");
+        return false;
+      }
+
+      try {
+        $("#remoteStateText").textContent = "測試中";
+        const response = await fetch("/api/health", { method: "GET" });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+        $("#remoteStateText").textContent = "連線正常";
+        $("#remoteStateText").style.color = "var(--green)";
+        addLog(`遠端 API 正常：${data.supports.join(" / ")}`, "ok");
+        return true;
+      } catch (error) {
+        $("#remoteStateText").textContent = "連線失敗";
+        $("#remoteStateText").style.color = "var(--red)";
+        addLog(`遠端 API 測試失敗：${error.message}`, "bad");
+        return false;
+      }
     }
 
     function addLog(message, type = "") {
@@ -1558,14 +1707,48 @@
       updateDecisionSummary(result);
     }
 
-    function runAnalysis() {
+    function setApiState(text, type = "") {
+      const target = $("#apiStateText");
+      if (!target) return;
+      target.textContent = text;
+      target.style.color = type === "ok" ? "var(--green)" : type === "bad" ? "var(--red)" : "inherit";
+    }
+
+    async function analyzeViaApi(rows, strategy) {
+      if (window.location.protocol === "file:") {
+        setApiState("本機備援");
+        return null;
+      }
+
+      try {
+        setApiState("分析中");
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows, strategy })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok || !data.result) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+        setApiState("後端動態", "ok");
+        return data.result;
+      } catch (error) {
+        setApiState("前端備援", "bad");
+        addLog(`後端 API 無法使用，改用前端分析：${error.message}`, "bad");
+        return null;
+      }
+    }
+
+    async function runAnalysis() {
       latestRows = parseCSV($("#csvInput").value);
       if (!latestRows.length) {
         addLog("沒有可分析的 CSV 資料", "bad");
         renderResult({ ...resultShell([], activeStrategy), summary: "沒有資料", metrics: [], checks: [] });
         return;
       }
-      const result = analyzeRows(latestRows, activeStrategy);
+      const apiResult = await analyzeViaApi(latestRows, activeStrategy);
+      const result = apiResult || analyzeRows(latestRows, activeStrategy);
       renderResult(result);
       addLog(`${result.strategy} 訊號：${result.signal}`, result.signal === "SELL" ? "bad" : result.signal === "BUY" ? "ok" : "");
     }
@@ -1756,6 +1939,7 @@
       $("#tgToken").value = settings.token || "";
       $("#tgChatId").value = settings.chatId || "";
       updateTgState();
+      updateRemotePanel();
       renderDayChecklist();
       updateCommandFields();
       loadSample();
@@ -1775,6 +1959,32 @@
         const chatId = $("#tgChatId").value.trim() || "你的TelegramChatId";
         copyText(`TELEGRAM_TOKEN=${token}\nTELEGRAM_CHAT_ID=${chatId}`, "已複製 Telegram .env 設定");
       });
+      $("#copyRemoteBtn").addEventListener("click", () => {
+        const remoteUrl = getRemoteUrl();
+        if (!remoteUrl) {
+          addLog("尚未部署，沒有遠端網址可複製", "bad");
+          return;
+        }
+        copyText(remoteUrl, "已複製遠端連線網址");
+      });
+      $("#shareRemoteBtn").addEventListener("click", async () => {
+        const remoteUrl = getRemoteUrl();
+        if (!remoteUrl) {
+          addLog("尚未部署，沒有遠端網址可分享", "bad");
+          return;
+        }
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: "Quant Trade", text: "Quant Trade 遠端控制台", url: remoteUrl });
+            addLog("已開啟分享面板", "ok");
+          } catch {
+            addLog("分享已取消");
+          }
+        } else {
+          copyText(remoteUrl, "此裝置不支援分享面板，已複製網址");
+        }
+      });
+      $("#testRemoteBtn").addEventListener("click", testRemoteConnection);
       $("#tgToken").addEventListener("input", updateTgState);
       $("#tgChatId").addEventListener("input", updateTgState);
       $("#analyzeBtn").addEventListener("click", runAnalysis);
@@ -1815,6 +2025,9 @@
     window.addEventListener("DOMContentLoaded", () => {
       init();
       if (window.lucide) window.lucide.createIcons();
+      if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+        navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      }
     });
   </script>
 </body>

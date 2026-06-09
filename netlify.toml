@@ -1,6 +1,9 @@
 [build]
   publish = "."
 
+[functions]
+  directory = "netlify/functions"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -8,5 +11,10 @@
 
 [[redirects]]
   from = "/app"
+  to = "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+  status = 200
+
+[[redirects]]
+  from = "/remote"
   to = "/quant_system功能&使用說明/quant_system_strategy_tg.html"
   status = 200

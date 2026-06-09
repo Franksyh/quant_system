@@ -1,0 +1,18 @@
+{
+  "name": "Quant Trade Remote",
+  "short_name": "Quant Trade",
+  "description": "手機、電腦與網頁版皆可使用的遠端策略訊號控制台。",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#102433",
+  "icons": [
+    {
+      "src": "/assets/quant-trade-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
