@@ -117,6 +117,12 @@
       margin-bottom: 10px;
     }
 
+    .input-action {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px;
+      gap: 8px;
+    }
+
     .field label,
     .small-label {
       color: var(--muted);
@@ -328,6 +334,48 @@
       grid-template-columns: 200px minmax(0, 1fr);
       gap: 14px;
       align-items: start;
+    }
+
+    .decision-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .decision-item {
+      min-height: 72px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .decision-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .decision-item strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .decision-item.low strong {
+      color: var(--green);
+    }
+
+    .decision-item.medium strong {
+      color: var(--amber);
+    }
+
+    .decision-item.high strong {
+      color: var(--red);
     }
 
     .signal-card {
@@ -574,6 +622,19 @@
       line-height: 1.5;
     }
 
+    .notice {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 10px 11px;
+      border: 1px solid #ead29d;
+      border-radius: 8px;
+      background: var(--amber-soft);
+      color: #654a13;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
     .split-fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -619,6 +680,7 @@
       .metric-grid,
       .strategy-grid,
       .image-strip,
+      .decision-strip,
       .split-fields {
         grid-template-columns: 1fr;
       }
@@ -648,7 +710,12 @@
         <h2>Telegram 連線</h2>
         <div class="field">
           <label for="tgToken">Bot Token</label>
-          <input id="tgToken" type="password" autocomplete="off" placeholder="123456:ABC...">
+          <div class="input-action">
+            <input id="tgToken" type="password" autocomplete="off" placeholder="123456:ABC...">
+            <button class="btn secondary icon-only" id="toggleTokenBtn" type="button" title="顯示或隱藏 Token">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
         </div>
         <div class="field">
           <label for="tgChatId">Chat ID</label>
@@ -661,6 +728,13 @@
           <button class="btn secondary" id="testTgBtn" type="button" title="發送測試訊息">
             <i data-lucide="send"></i><span>測試</span>
           </button>
+        </div>
+        <button class="btn secondary" id="copyEnvBtn" type="button" title="複製 .env Telegram 設定" style="width:100%; margin-top:8px;">
+          <i data-lucide="clipboard"></i><span>複製 .env 設定</span>
+        </button>
+        <div class="notice">
+          <strong>安全提示</strong>
+          Token 只保存在這台瀏覽器；請不要把 `.env` 或 `.env.txt` 推上 GitHub。
         </div>
       </section>
 
@@ -804,6 +878,21 @@
             <div>
               <div class="metric-grid" id="metricGrid"></div>
               <div class="checklist" id="checklist"></div>
+            </div>
+          </div>
+
+          <div class="decision-strip">
+            <div class="decision-item medium" id="riskTile">
+              <span>風險等級</span>
+              <strong id="riskLevelText">待分析</strong>
+            </div>
+            <div class="decision-item" id="nextActionTile">
+              <span>下一步</span>
+              <strong id="nextActionText">載入資料後分析</strong>
+            </div>
+            <div class="decision-item" id="tgReadyTile">
+              <span>推播狀態</span>
+              <strong id="tgReadyText">TG 未設定</strong>
             </div>
           </div>
 
@@ -959,6 +1048,7 @@
       const token = $("#tgToken").value.trim();
       const chatId = $("#tgChatId").value.trim();
       $("#tgStateText").textContent = token && chatId ? "已設定" : "未設定";
+      updateDecisionSummary(latestResult);
     }
 
     function addLog(message, type = "") {
@@ -967,6 +1057,17 @@
       item.className = `log-item ${type}`;
       item.textContent = `${new Date().toLocaleTimeString()}  ${message}`;
       log.prepend(item);
+    }
+
+    async function copyText(text, successMessage) {
+      try {
+        await navigator.clipboard.writeText(text);
+        addLog(successMessage, "ok");
+        return true;
+      } catch {
+        addLog("複製失敗，請手動選取內容", "bad");
+        return false;
+      }
     }
 
     function parseNumber(value) {
@@ -1391,6 +1492,45 @@
       return calculators[strategy](rows);
     }
 
+    function updateDecisionSummary(result) {
+      const tokenReady = $("#tgToken")?.value.trim() && $("#tgChatId")?.value.trim();
+      if ($("#tgReadyText")) {
+        $("#tgReadyText").textContent = tokenReady ? "可推播到 Telegram" : "TG 未設定";
+        $("#tgReadyTile").className = `decision-item ${tokenReady ? "low" : "medium"}`;
+      }
+
+      if (!result || !result.rows || !result.rows.length) {
+        if ($("#riskLevelText")) $("#riskLevelText").textContent = "待分析";
+        if ($("#nextActionText")) $("#nextActionText").textContent = "載入資料後分析";
+        if ($("#riskTile")) $("#riskTile").className = "decision-item medium";
+        return;
+      }
+
+      const failed = result.checks.filter(item => !item.pass).length;
+      let riskLevel = "中";
+      let riskClass = "medium";
+      let nextAction = "觀察條件是否改善";
+
+      if (result.signal === "BUY") {
+        riskLevel = failed <= 1 ? "低" : "中";
+        riskClass = failed <= 1 ? "low" : "medium";
+        nextAction = failed <= 1 ? "可先用小部位或紙上交易驗證" : "等待條件更完整再進場";
+      } else if (result.signal === "SELL") {
+        riskLevel = "高";
+        riskClass = "high";
+        nextAction = "優先檢查停損、均線與持倉風險";
+      } else if (failed >= Math.ceil(result.checks.length / 2)) {
+        riskLevel = "中偏高";
+        riskClass = "high";
+        nextAction = "暫不追價，等待突破或回測確認";
+      }
+
+      $("#riskLevelText").textContent = riskLevel;
+      $("#nextActionText").textContent = nextAction;
+      $("#riskTile").className = `decision-item ${riskClass}`;
+      $("#nextActionTile").className = `decision-item ${riskClass === "high" ? "medium" : riskClass}`;
+    }
+
     function renderResult(result) {
       latestResult = result;
       $("#activeStrategyText").textContent = result.strategy;
@@ -1414,6 +1554,8 @@
           <div><strong>${item.label}</strong>${item.detail ? `<br>${item.detail}` : ""}</div>
         </div>
       `).join("");
+
+      updateDecisionSummary(result);
     }
 
     function runAnalysis() {
@@ -1623,6 +1765,16 @@
         addLog("Telegram 設定已保存", "ok");
       });
       $("#testTgBtn").addEventListener("click", () => sendTelegram("Quant System TG 測試訊息"));
+      $("#toggleTokenBtn").addEventListener("click", () => {
+        const input = $("#tgToken");
+        input.type = input.type === "password" ? "text" : "password";
+        addLog(input.type === "text" ? "Token 已顯示" : "Token 已隱藏");
+      });
+      $("#copyEnvBtn").addEventListener("click", () => {
+        const token = $("#tgToken").value.trim() || "你的TelegramBotToken";
+        const chatId = $("#tgChatId").value.trim() || "你的TelegramChatId";
+        copyText(`TELEGRAM_TOKEN=${token}\nTELEGRAM_CHAT_ID=${chatId}`, "已複製 Telegram .env 設定");
+      });
       $("#tgToken").addEventListener("input", updateTgState);
       $("#tgChatId").addEventListener("input", updateTgState);
       $("#analyzeBtn").addEventListener("click", runAnalysis);
@@ -1644,12 +1796,7 @@
 
       $("#copyCommandBtn").addEventListener("click", async () => {
         const command = buildCommand();
-        try {
-          await navigator.clipboard.writeText(command);
-          addLog(`已複製 ${command}`, "ok");
-        } catch {
-          addLog("複製失敗，請手動選取指令", "bad");
-        }
+        copyText(command, `已複製 ${command}`);
       });
 
       $("#shareCommandBtn").addEventListener("click", () => {

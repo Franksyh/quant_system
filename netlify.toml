@@ -1,0 +1,12 @@
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300"
+
+[[redirects]]
+  from = "/app"
+  to = "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+  status = 200
