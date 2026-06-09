@@ -2,7 +2,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -171,57 +171,9 @@ const server = http.createServer(async (req, res) => {
       return res.end();
     }
 
-    if (requestUrl.pathname === "/api/config") {
-      return sendJson(res, {
-        ok: true,
-        source: "Yahoo Finance chart/search",
-        timezone: MARKET_TIME_ZONE,
-        cacheSeconds: CACHE_SECONDS,
-        presets: PRESETS,
-        refreshedAt: new Date().toISOString(),
-      });
-    }
-
-    if (requestUrl.pathname === "/api/search") {
-      const query = String(requestUrl.searchParams.get("q") || "").trim();
-      if (!query) return sendJson(res, { ok: true, query, results: [], news: [] });
-      const data = await searchAssets(query);
-      return sendJson(res, { ok: true, ...data });
-    }
-
-    if (requestUrl.pathname === "/api/quote") {
-      const rawSymbol = String(requestUrl.searchParams.get("symbol") || "").trim();
-      if (!rawSymbol) return sendJson(res, { ok: false, error: "請提供 symbol 參數。" }, 400);
-      const symbol = normalizeSymbol(rawSymbol);
-      const instrument = await getInstrument(symbol, { range: "1y", interval: "1d" });
-      const news = await getNewsForInstrument(instrument);
-      return sendJson(res, { ok: true, item: instrument, news });
-    }
-
-    if (requestUrl.pathname === "/api/batch") {
-      const symbols = splitSymbols(requestUrl.searchParams.get("symbols") || "");
-      if (!symbols.length) return sendJson(res, { ok: true, items: [] });
-      const items = await fetchInstrumentList(symbols.slice(0, 60), { range: "1y", interval: "1d" });
-      return sendJson(res, { ok: true, items, source: "Yahoo Finance chart", refreshedAt: new Date().toISOString() });
-    }
-
-    if (requestUrl.pathname === "/api/dashboard") {
-      const dashboard = await cached(
-        "dashboard:v3",
-        DASHBOARD_CACHE_SECONDS,
-        () => buildDashboard()
-      );
-      return sendJson(res, dashboard);
-    }
-
-    if (requestUrl.pathname === "/api/news") {
-      const query = String(requestUrl.searchParams.get("q") || "stock market fed rates ai semiconductor").trim();
-      const news = await searchNews(query, 10);
-      return sendJson(res, { ok: true, query, news });
-    }
-
-    if (requestUrl.pathname === "/api/health") {
-      return sendJson(res, { ok: true, now: new Date().toISOString() });
+    const apiResponse = await handleApiRequest(requestUrl);
+    if (apiResponse) {
+      return sendJson(res, apiResponse.data, apiResponse.status);
     }
 
     return serveStatic(requestUrl.pathname, res);
@@ -238,9 +190,76 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Market analyst app listening on http://localhost:${PORT}`);
-});
+if (isDirectRun()) {
+  server.listen(PORT, () => {
+    console.log(`Market analyst app listening on http://localhost:${PORT}`);
+  });
+}
+
+export async function handleApiRequest(requestUrl) {
+  if (requestUrl.pathname === "/api/config") {
+    return jsonResult({
+      ok: true,
+      source: "Yahoo Finance chart/search",
+      timezone: MARKET_TIME_ZONE,
+      cacheSeconds: CACHE_SECONDS,
+      presets: PRESETS,
+      refreshedAt: new Date().toISOString(),
+    });
+  }
+
+  if (requestUrl.pathname === "/api/search") {
+    const query = String(requestUrl.searchParams.get("q") || "").trim();
+    if (!query) return jsonResult({ ok: true, query, results: [], news: [] });
+    const data = await searchAssets(query);
+    return jsonResult({ ok: true, ...data });
+  }
+
+  if (requestUrl.pathname === "/api/quote") {
+    const rawSymbol = String(requestUrl.searchParams.get("symbol") || "").trim();
+    if (!rawSymbol) return jsonResult({ ok: false, error: "請提供 symbol 參數。" }, 400);
+    const symbol = normalizeSymbol(rawSymbol);
+    const instrument = await getInstrument(symbol, { range: "1y", interval: "1d" });
+    const news = await getNewsForInstrument(instrument);
+    return jsonResult({ ok: true, item: instrument, news });
+  }
+
+  if (requestUrl.pathname === "/api/batch") {
+    const symbols = splitSymbols(requestUrl.searchParams.get("symbols") || "");
+    if (!symbols.length) return jsonResult({ ok: true, items: [] });
+    const items = await fetchInstrumentList(symbols.slice(0, 60), { range: "1y", interval: "1d" });
+    return jsonResult({ ok: true, items, source: "Yahoo Finance chart", refreshedAt: new Date().toISOString() });
+  }
+
+  if (requestUrl.pathname === "/api/dashboard") {
+    const dashboard = await cached(
+      "dashboard:v3",
+      DASHBOARD_CACHE_SECONDS,
+      () => buildDashboard()
+    );
+    return jsonResult(dashboard);
+  }
+
+  if (requestUrl.pathname === "/api/news") {
+    const query = String(requestUrl.searchParams.get("q") || "stock market fed rates ai semiconductor").trim();
+    const news = await searchNews(query, 10);
+    return jsonResult({ ok: true, query, news });
+  }
+
+  if (requestUrl.pathname === "/api/health") {
+    return jsonResult({ ok: true, now: new Date().toISOString() });
+  }
+
+  return null;
+}
+
+function jsonResult(data, status = 200) {
+  return { data, status };
+}
+
+function isDirectRun() {
+  return process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+}
 
 async function serveStatic(pathname, res) {
   const safePath = pathname === "/" ? `/${APP_FILE}` : decodeURIComponent(pathname);

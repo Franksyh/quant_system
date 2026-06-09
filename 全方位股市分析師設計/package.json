@@ -7,6 +7,9 @@
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
+  "devDependencies": {
+    "@netlify/functions": "^5.3.0"
+  },
   "engines": {
     "node": ">=20"
   }
