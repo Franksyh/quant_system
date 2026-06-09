@@ -1,0 +1,28 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+venv/
+nenv/
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local runtime output
+*.log
+quant_system_strategy_tg_preview.png
+quant_system_strategy_tg_mobile_preview.png
+
+# OS files
+.DS_Store
+Thumbs.db

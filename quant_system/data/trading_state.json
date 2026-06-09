@@ -1,0 +1,20 @@
+{
+  "executor": {
+    "avg_prices": {
+      "2330": 521.9
+    },
+    "balance": 447810.0,
+    "black_swan": false,
+    "max_order": 1000,
+    "positions": {
+      "2330": 100
+    },
+    "stop_loss_pct": 0.01,
+    "take_profit_pct": 0.35
+  },
+  "stock_list": [
+    "2330"
+  ],
+  "strategy_mode": "default",
+  "version": 1
+}

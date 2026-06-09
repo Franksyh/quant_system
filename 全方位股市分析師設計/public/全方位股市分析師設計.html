@@ -1,0 +1,1779 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全方位股市分析師</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.468.0/lucide.min.js" defer></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f2;
+      --panel: #ffffff;
+      --panel-soft: #f8faf8;
+      --ink: #17201d;
+      --muted: #65726d;
+      --line: #dfe4df;
+      --line-strong: #cbd3cd;
+      --accent: #007777;
+      --accent-dark: #07575b;
+      --accent-soft: #e1f1ef;
+      --rise: #c43232;
+      --fall: #168156;
+      --warning: #ad6b0a;
+      --purple: #6654b8;
+      --shadow: 0 16px 38px rgba(29, 40, 36, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app {
+      width: min(1480px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 18px 0 36px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: minmax(230px, 0.72fr) minmax(360px, 1.45fr) minmax(290px, 0.9fr);
+      gap: 14px;
+      align-items: center;
+      padding: 12px 0;
+      background: rgba(245, 246, 242, 0.94);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark,
+    .icon-box {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: var(--ink);
+      color: white;
+      flex: 0 0 auto;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(20px, 2.1vw, 30px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand p,
+    .meta-line {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .search-shell {
+      position: relative;
+      min-width: 0;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .search-row input,
+    .converter input,
+    .converter select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      outline: 0;
+    }
+
+    .search-row input {
+      padding: 0 14px 0 42px;
+    }
+
+    .search-row input:focus,
+    .converter input:focus,
+    .converter select:focus {
+      border-color: rgba(0, 119, 119, 0.52);
+      box-shadow: 0 0 0 3px rgba(0, 119, 119, 0.12);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-results {
+      position: absolute;
+      inset: calc(100% + 8px) 0 auto 0;
+      z-index: 60;
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .search-result {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 12px 14px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .search-result:hover {
+      background: var(--panel-soft);
+    }
+
+    .search-result:last-child {
+      border-bottom: 0;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn,
+    .icon-btn,
+    .segmented button,
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      background: var(--panel);
+      color: var(--ink);
+      font-weight: 750;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn.soft {
+      border-color: rgba(0, 119, 119, 0.16);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .icon-btn {
+      width: 38px;
+      padding: 0;
+    }
+
+    .btn[aria-pressed="true"],
+    .segmented button.active {
+      border-color: var(--accent);
+      background: var(--ink);
+      color: white;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0 14px;
+    }
+
+    .tab {
+      min-width: 112px;
+      color: var(--muted);
+    }
+
+    .tab.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+      align-items: start;
+    }
+
+    .kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .asset-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .panel-surface,
+    .kpi,
+    .asset-card,
+    .news-item,
+    .table-shell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-surface {
+      padding: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .section-title h2,
+    .section-title h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .kpi {
+      min-height: 128px;
+      padding: 14px;
+    }
+
+    .kpi-top,
+    .asset-top,
+    .table-tools {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .symbol {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .name {
+      margin-top: 4px;
+      font-weight: 850;
+      line-height: 1.22;
+    }
+
+    .price {
+      margin-top: 13px;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .change {
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .rise {
+      color: var(--rise);
+    }
+
+    .fall {
+      color: var(--fall);
+    }
+
+    .flat {
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: #edf0ed;
+      color: #45504b;
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .badge.buy,
+    .badge.bull {
+      background: #f7dddd;
+      color: #9f2323;
+    }
+
+    .badge.sell,
+    .badge.bear {
+      background: #dff2e8;
+      color: #116b49;
+    }
+
+    .badge.watch {
+      background: #f7ead2;
+      color: #8b5208;
+    }
+
+    .badge.info {
+      background: #e9e7f8;
+      color: var(--purple);
+    }
+
+    .macro-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .macro-item {
+      min-height: 96px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--panel-soft);
+    }
+
+    .macro-item p,
+    .news-item p,
+    .asset-card p {
+      margin: 0;
+    }
+
+    .macro-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .hot-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .asset-card {
+      width: 100%;
+      min-height: 158px;
+      padding: 14px;
+      text-align: left;
+      color: var(--ink);
+    }
+
+    .asset-card:hover,
+    .table-shell tbody tr:hover {
+      border-color: var(--accent);
+      background: #fbfdfb;
+    }
+
+    .score-ring {
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 3px solid var(--accent);
+      color: var(--accent-dark);
+      font-weight: 900;
+      font-size: 13px;
+      flex: 0 0 auto;
+    }
+
+    .levels {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .level {
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .level span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .level strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .news-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .news-item {
+      display: block;
+      min-height: 78px;
+      padding: 12px;
+    }
+
+    .news-title {
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 850;
+    }
+
+    .news-meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .segmented {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .table-shell {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      background: var(--panel-soft);
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    .spark {
+      display: block;
+      width: 100%;
+      height: 42px;
+      margin-top: 12px;
+    }
+
+    .converter {
+      display: grid;
+      grid-template-columns: 1fr 120px 120px auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .converter input,
+    .converter select {
+      padding: 0 10px;
+    }
+
+    .converter-result {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--ink);
+      color: white;
+      padding: 8px 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(18, 25, 23, 0.52);
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .dialog {
+      width: min(1040px, 100%);
+      max-height: min(860px, 92vh);
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 30px 90px rgba(14, 20, 18, 0.28);
+    }
+
+    .dialog-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .dialog-body {
+      max-height: calc(92vh - 76px);
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .detail-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel-soft);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-chart {
+      width: 100%;
+      height: 210px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .notice,
+    .error-box,
+    .loading {
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .notice {
+      border: 1px solid rgba(173, 107, 10, 0.22);
+      background: #fff6e7;
+      color: #754600;
+    }
+
+    .error-box {
+      display: none;
+      border: 1px solid rgba(196, 50, 50, 0.22);
+      background: #fdeaea;
+      color: #8f2424;
+      margin-bottom: 14px;
+    }
+
+    .error-box.show {
+      display: block;
+    }
+
+    .loading {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--muted);
+    }
+
+    .empty {
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .hide {
+      display: none !important;
+    }
+
+    @media (max-width: 1180px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .dashboard-grid,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-grid,
+      .asset-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        width: min(100% - 18px, 1480px);
+      }
+
+      .brand h1 {
+        white-space: normal;
+      }
+
+      .search-row,
+      .converter {
+        grid-template-columns: 1fr;
+      }
+
+      .search-icon {
+        top: 12px;
+      }
+
+      .kpi-grid,
+      .asset-grid,
+      .macro-list,
+      .hot-list,
+      .detail-metrics,
+      .levels {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head,
+      .status-line,
+      .table-tools {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .dialog {
+        max-height: 94vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><i data-lucide="line-chart"></i></div>
+        <div>
+          <h1>全方位股市分析師</h1>
+          <p id="sourceLabel">Yahoo Finance 即時資料</p>
+        </div>
+      </div>
+
+      <div class="search-shell">
+        <i data-lucide="search" class="search-icon"></i>
+        <div class="search-row">
+          <input id="searchInput" autocomplete="off" placeholder="搜尋大盤、股票、基金、ETF、原物料 ETF、債券、外幣，例如 2330、NVDA、0050、TLT、美元台幣">
+          <button id="searchButton" class="btn primary" type="button"><i data-lucide="search"></i><span>搜尋</span></button>
+        </div>
+        <div id="searchResults" class="search-results hide"></div>
+      </div>
+
+      <div class="actions">
+        <button id="refreshButton" class="icon-btn" type="button" title="重新整理"><i data-lucide="refresh-cw"></i></button>
+        <button id="autoButton" class="btn soft" type="button" aria-pressed="true"><i data-lucide="timer-reset"></i><span>自動更新</span></button>
+        <div class="meta-line">
+          <div id="clock">--</div>
+          <div id="refreshedAt">等待資料</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <nav class="tabs" aria-label="資產分頁">
+      <button class="tab active" data-tab="dashboard" type="button"><i data-lucide="layout-dashboard"></i>首頁</button>
+      <button class="tab" data-tab="stocks" type="button"><i data-lucide="candlestick-chart"></i>股票</button>
+      <button class="tab" data-tab="funds" type="button"><i data-lucide="pie-chart"></i>基金/ETF</button>
+      <button class="tab" data-tab="bonds" type="button"><i data-lucide="landmark"></i>債券</button>
+      <button class="tab" data-tab="forex" type="button"><i data-lucide="coins"></i>外匯</button>
+    </nav>
+
+    <main>
+      <section id="panel-dashboard" class="panel active">
+        <div class="status-line">
+          <span id="macroSummary">載入市場脈動中</span>
+          <span>教育用途，請自行控管風險</span>
+        </div>
+
+        <div id="kpiGrid" class="grid kpi-grid"></div>
+
+        <div class="grid dashboard-grid" style="margin-top:14px">
+          <div class="grid">
+            <section class="panel-surface">
+              <div class="section-head">
+                <div class="section-title">
+                  <i data-lucide="radar"></i>
+                  <h2>飆股建議</h2>
+                </div>
+                <div class="segmented" id="hotFilter">
+                  <button class="active" data-price-range="all" type="button">全部</button>
+                  <button data-price-range="lt100" type="button">100 元內</button>
+                  <button data-price-range="100to200" type="button">100-200 元</button>
+                  <button data-price-range="gt200" type="button">200 元以上</button>
+                </div>
+              </div>
+              <div id="hotList" class="hot-list"></div>
+            </section>
+
+            <section class="panel-surface">
+              <div class="section-head">
+                <div class="section-title">
+                  <i data-lucide="globe-2"></i>
+                  <h2>多面向市場分析</h2>
+                </div>
+                <span id="overallBadge" class="badge info">--</span>
+              </div>
+              <div id="macroList" class="macro-list"></div>
+            </section>
+          </div>
+
+          <aside class="grid">
+            <section class="panel-surface">
+              <div class="section-title" style="margin-bottom:12px">
+                <i data-lucide="newspaper"></i>
+                <h2>Yahoo 市場新聞</h2>
+              </div>
+              <div id="newsList" class="news-list"></div>
+            </section>
+
+            <section class="notice">
+              系統使用 Yahoo Finance search/chart 回傳的代號、名稱、價格、外匯與指數資料，買點與賣點為規則式技術分析估算，非保證獲利訊號。
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="panel-stocks" class="panel">
+        <div class="panel-surface">
+          <div class="table-tools">
+            <div class="section-title">
+              <i data-lucide="candlestick-chart"></i>
+              <h2>股票分析</h2>
+            </div>
+            <div class="segmented" id="stockMarketFilter">
+              <button class="active" data-market="tw" type="button">台股</button>
+              <button data-market="us" type="button">美股</button>
+              <button data-market="all" type="button">全部</button>
+            </div>
+            <div class="segmented" id="stockPriceFilter">
+              <button class="active" data-price-range="all" type="button">全部價格</button>
+              <button data-price-range="lt100" type="button">100 元內</button>
+              <button data-price-range="100to200" type="button">100-200 元</button>
+              <button data-price-range="gt200" type="button">200 元以上</button>
+            </div>
+          </div>
+        </div>
+        <div class="table-shell" style="margin-top:14px">
+          <table>
+            <thead>
+              <tr>
+                <th>代號 / 名稱</th>
+                <th>市場</th>
+                <th>價格</th>
+                <th>漲跌</th>
+                <th>RSI</th>
+                <th>短期</th>
+                <th>中期</th>
+                <th>建議</th>
+                <th>買點</th>
+                <th>停損</th>
+              </tr>
+            </thead>
+            <tbody id="stockTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-funds" class="panel">
+        <section class="panel-surface">
+          <div class="section-title" style="margin-bottom:12px">
+            <i data-lucide="pie-chart"></i>
+            <h2>基金、ETF 與原物料 ETF</h2>
+          </div>
+          <div id="fundGrid" class="grid asset-grid"></div>
+        </section>
+      </section>
+
+      <section id="panel-bonds" class="panel">
+        <section class="panel-surface">
+          <div class="section-title" style="margin-bottom:12px">
+            <i data-lucide="landmark"></i>
+            <h2>債券與殖利率</h2>
+          </div>
+          <div id="bondGrid" class="grid asset-grid"></div>
+        </section>
+      </section>
+
+      <section id="panel-forex" class="panel">
+        <section class="panel-surface">
+          <div class="section-head">
+            <div class="section-title">
+              <i data-lucide="coins"></i>
+              <h2>外匯與外幣指數</h2>
+            </div>
+          </div>
+
+          <div class="converter">
+            <input id="fxAmount" type="number" min="0" step="0.01" value="1000">
+            <select id="fxFrom">
+              <option value="USD">USD 美元</option>
+              <option value="TWD">TWD 新台幣</option>
+              <option value="JPY">JPY 日圓</option>
+              <option value="EUR">EUR 歐元</option>
+              <option value="GBP">GBP 英鎊</option>
+              <option value="AUD">AUD 澳幣</option>
+              <option value="CNH">CNH 離岸人民幣</option>
+            </select>
+            <select id="fxTo">
+              <option value="TWD">TWD 新台幣</option>
+              <option value="USD">USD 美元</option>
+              <option value="JPY">JPY 日圓</option>
+              <option value="EUR">EUR 歐元</option>
+              <option value="GBP">GBP 英鎊</option>
+              <option value="AUD">AUD 澳幣</option>
+              <option value="CNH">CNH 離岸人民幣</option>
+            </select>
+            <div id="fxResult" class="converter-result">--</div>
+          </div>
+
+          <div id="forexGrid" class="grid asset-grid"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="detailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="dialog">
+      <div class="dialog-head">
+        <div>
+          <div id="detailSymbol" class="symbol">--</div>
+          <h2 id="detailTitle">載入中</h2>
+          <p id="detailYahooName" class="meta-line">--</p>
+        </div>
+        <button id="closeModal" class="icon-btn" type="button" title="關閉"><i data-lucide="x"></i></button>
+      </div>
+      <div class="dialog-body">
+        <div id="detailLoading" class="loading">讀取 Yahoo Finance 資料中</div>
+        <div id="detailContent" class="detail-grid hide">
+          <section>
+            <div class="kpi" style="min-height:auto; box-shadow:none">
+              <div class="kpi-top">
+                <div>
+                  <div id="detailCategory" class="badge info">--</div>
+                  <div id="detailPrice" class="price">--</div>
+                  <div id="detailChange" class="change">--</div>
+                </div>
+                <div id="detailScore" class="score-ring">--</div>
+              </div>
+              <canvas id="detailChart" class="detail-chart" width="920" height="260"></canvas>
+            </div>
+
+            <div class="detail-metrics">
+              <div class="metric"><span>RSI(14)</span><strong id="metricRsi">--</strong></div>
+              <div class="metric"><span>MACD</span><strong id="metricMacd">--</strong></div>
+              <div class="metric"><span>20 日均線</span><strong id="metricSma20">--</strong></div>
+              <div class="metric"><span>60 日均線</span><strong id="metricSma60">--</strong></div>
+              <div class="metric"><span>短期</span><strong id="metricShort">--</strong></div>
+              <div class="metric"><span>中期</span><strong id="metricMedium">--</strong></div>
+              <div class="metric"><span>長期</span><strong id="metricLong">--</strong></div>
+              <div class="metric"><span>建議</span><strong id="metricAction">--</strong></div>
+            </div>
+
+            <section class="panel-surface" style="box-shadow:none">
+              <div class="section-title" style="margin-bottom:10px">
+                <i data-lucide="target"></i>
+                <h3>買點、賣點與風控</h3>
+              </div>
+              <div class="levels">
+                <div class="level"><span>買點區間</span><strong id="levelBuy">--</strong></div>
+                <div class="level"><span>賣點區間</span><strong id="levelSell">--</strong></div>
+                <div class="level"><span>停利點</span><strong id="levelTakeProfit">--</strong></div>
+                <div class="level"><span>停損點</span><strong id="levelStopLoss">--</strong></div>
+              </div>
+              <p id="detailNote" class="macro-note"></p>
+            </section>
+          </section>
+
+          <aside class="grid">
+            <section class="panel-surface" style="box-shadow:none">
+              <div class="section-title" style="margin-bottom:10px">
+                <i data-lucide="list-checks"></i>
+                <h3>判斷依據</h3>
+              </div>
+              <ul id="reasonList" class="list"></ul>
+            </section>
+            <section class="panel-surface" style="box-shadow:none">
+              <div class="section-title" style="margin-bottom:10px">
+                <i data-lucide="shield-alert"></i>
+                <h3>風險提示</h3>
+              </div>
+              <ul id="riskList" class="list"></ul>
+            </section>
+            <section class="panel-surface" style="box-shadow:none">
+              <div class="section-title" style="margin-bottom:10px">
+                <i data-lucide="newspaper"></i>
+                <h3>相關新聞</h3>
+              </div>
+              <div id="detailNews" class="news-list"></div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = location.protocol === "file:" ? "http://localhost:3000" : "";
+    const AUTO_REFRESH_MS = 5 * 60 * 1000;
+    const state = {
+      dashboard: null,
+      hotRange: "all",
+      stockMarket: "tw",
+      stockRange: "all",
+      autoRefresh: true,
+      autoTimer: null,
+      loading: false,
+    };
+
+    const els = {
+      sourceLabel: document.querySelector("#sourceLabel"),
+      clock: document.querySelector("#clock"),
+      refreshedAt: document.querySelector("#refreshedAt"),
+      errorBox: document.querySelector("#errorBox"),
+      searchInput: document.querySelector("#searchInput"),
+      searchButton: document.querySelector("#searchButton"),
+      searchResults: document.querySelector("#searchResults"),
+      refreshButton: document.querySelector("#refreshButton"),
+      autoButton: document.querySelector("#autoButton"),
+      macroSummary: document.querySelector("#macroSummary"),
+      overallBadge: document.querySelector("#overallBadge"),
+      kpiGrid: document.querySelector("#kpiGrid"),
+      hotList: document.querySelector("#hotList"),
+      macroList: document.querySelector("#macroList"),
+      newsList: document.querySelector("#newsList"),
+      stockTable: document.querySelector("#stockTable"),
+      fundGrid: document.querySelector("#fundGrid"),
+      bondGrid: document.querySelector("#bondGrid"),
+      forexGrid: document.querySelector("#forexGrid"),
+      fxAmount: document.querySelector("#fxAmount"),
+      fxFrom: document.querySelector("#fxFrom"),
+      fxTo: document.querySelector("#fxTo"),
+      fxResult: document.querySelector("#fxResult"),
+      detailModal: document.querySelector("#detailModal"),
+      closeModal: document.querySelector("#closeModal"),
+      detailLoading: document.querySelector("#detailLoading"),
+      detailContent: document.querySelector("#detailContent"),
+    };
+
+    boot();
+
+    function boot() {
+      wireEvents();
+      tickClock();
+      setInterval(tickClock, 1000);
+      startAutoRefresh();
+      refreshDashboard();
+      refreshIcons();
+    }
+
+    function wireEvents() {
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => switchTab(button.dataset.tab));
+      });
+
+      els.refreshButton.addEventListener("click", refreshDashboard);
+      els.autoButton.addEventListener("click", () => {
+        state.autoRefresh = !state.autoRefresh;
+        els.autoButton.setAttribute("aria-pressed", String(state.autoRefresh));
+        if (state.autoRefresh) startAutoRefresh();
+        else stopAutoRefresh();
+      });
+
+      els.searchButton.addEventListener("click", runSearch);
+      els.searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") runSearch();
+        if (event.key === "Escape") closeSearchResults();
+      });
+      els.searchInput.addEventListener("input", debounce(() => {
+        if (els.searchInput.value.trim().length >= 2) runSearch();
+        else closeSearchResults();
+      }, 360));
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".search-shell")) closeSearchResults();
+      });
+
+      document.querySelector("#hotFilter").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-price-range]");
+        if (!button) return;
+        state.hotRange = button.dataset.priceRange;
+        activateSegment(button);
+        renderHotList();
+      });
+
+      document.querySelector("#stockMarketFilter").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-market]");
+        if (!button) return;
+        state.stockMarket = button.dataset.market;
+        activateSegment(button);
+        renderStockTable();
+      });
+
+      document.querySelector("#stockPriceFilter").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-price-range]");
+        if (!button) return;
+        state.stockRange = button.dataset.priceRange;
+        activateSegment(button);
+        renderStockTable();
+      });
+
+      [els.fxAmount, els.fxFrom, els.fxTo].forEach((element) => element.addEventListener("input", renderFxConverter));
+      els.closeModal.addEventListener("click", closeDetail);
+      els.detailModal.addEventListener("click", (event) => {
+        if (event.target === els.detailModal) closeDetail();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeDetail();
+      });
+    }
+
+    async function refreshDashboard() {
+      if (state.loading) return;
+      state.loading = true;
+      hideError();
+      els.refreshedAt.textContent = "更新中";
+      els.refreshButton.disabled = true;
+
+      try {
+        const data = await apiGet("/api/dashboard");
+        state.dashboard = data;
+        renderDashboard();
+      } catch (error) {
+        showError(`${error.message}。請先在專案資料夾執行 npm start，再開啟 http://localhost:3000/。`);
+      } finally {
+        state.loading = false;
+        els.refreshButton.disabled = false;
+        refreshIcons();
+      }
+    }
+
+    function renderDashboard() {
+      const data = state.dashboard;
+      if (!data) return;
+      els.sourceLabel.textContent = data.source || "Yahoo Finance";
+      els.refreshedAt.textContent = `更新：${formatDateTime(data.refreshedAt)}`;
+      els.macroSummary.textContent = data.macro?.summary || "";
+      els.overallBadge.textContent = data.macro?.overall || "--";
+      els.overallBadge.className = `badge ${toneClass(data.macro?.overall)}`;
+
+      renderKpis(data.groups?.indices || []);
+      renderHotList();
+      renderMacroList();
+      renderNews(els.newsList, data.news || []);
+      renderStockTable();
+      renderAssetGrid(els.fundGrid, data.groups?.funds || []);
+      renderAssetGrid(els.bondGrid, data.groups?.bonds || []);
+      renderAssetGrid(els.forexGrid, data.groups?.forex || []);
+      renderFxConverter();
+    }
+
+    function renderKpis(items) {
+      const visible = items.filter((item) => item.ok).slice(0, 8);
+      els.kpiGrid.innerHTML = visible.map((item) => `
+        <button class="kpi" type="button" data-symbol="${escapeAttr(item.symbol)}">
+          <div class="kpi-top">
+            <div>
+              <div class="symbol">${escapeHtml(item.symbol)} · ${escapeHtml(item.category || "")}</div>
+              <div class="name">${escapeHtml(item.name)}</div>
+            </div>
+            <span class="badge ${toneClass(item.trend?.short)}">${escapeHtml(item.trend?.short || "中性")}</span>
+          </div>
+          <div class="price">${formatPrice(item)}</div>
+          <div class="change ${changeClass(item.change)}">${formatChange(item)}</div>
+          <canvas class="spark" width="360" height="58" aria-hidden="true"></canvas>
+        </button>
+      `).join("");
+
+      els.kpiGrid.querySelectorAll(".kpi").forEach((card, index) => {
+        card.addEventListener("click", () => openDetail(visible[index].symbol));
+        drawSpark(card.querySelector("canvas"), visible[index].candles, visible[index].change >= 0);
+      });
+    }
+
+    function renderHotList() {
+      const items = (state.dashboard?.trending || [])
+        .filter((item) => matchesPriceRange(item, state.hotRange))
+        .slice(0, 8);
+
+      if (!items.length) {
+        els.hotList.innerHTML = `<div class="empty">目前沒有符合價格區間的飆股候選。</div>`;
+        return;
+      }
+
+      els.hotList.innerHTML = items.map(assetCardHtml).join("");
+      bindAssetCards(els.hotList, items);
+    }
+
+    function renderMacroList() {
+      const signals = state.dashboard?.macro?.signals || [];
+      if (!signals.length) {
+        els.macroList.innerHTML = `<div class="empty">尚無宏觀訊號。</div>`;
+        return;
+      }
+
+      els.macroList.innerHTML = signals.map((signal) => `
+        <div class="macro-item">
+          <div class="kpi-top">
+            <strong>${escapeHtml(signal.title)}</strong>
+            <span class="badge ${toneClass(signal.tone)}">${escapeHtml(signal.tone)}</span>
+          </div>
+          <div class="change ${changeClass(signal.changePercent)}">${formatSignedPercent(signal.changePercent)}</div>
+          <p class="macro-note">${escapeHtml(signal.note)}</p>
+        </div>
+      `).join("");
+    }
+
+    function renderStockTable() {
+      const groups = state.dashboard?.groups;
+      if (!groups) {
+        els.stockTable.innerHTML = `<tr><td colspan="10">資料載入中</td></tr>`;
+        return;
+      }
+      const source =
+        state.stockMarket === "tw" ? groups.twStocks :
+        state.stockMarket === "us" ? groups.usStocks :
+        [...groups.twStocks, ...groups.usStocks];
+      const items = source
+        .filter((item) => item.ok)
+        .filter((item) => matchesPriceRange(item, state.stockRange))
+        .sort((a, b) => b.score - a.score);
+
+      if (!items.length) {
+        els.stockTable.innerHTML = `<tr><td colspan="10">目前沒有符合條件的股票。</td></tr>`;
+        return;
+      }
+
+      els.stockTable.innerHTML = items.map((item) => `
+        <tr data-symbol="${escapeAttr(item.symbol)}">
+          <td>
+            <strong>${escapeHtml(item.symbol)}</strong><br>
+            <span class="symbol">${escapeHtml(item.name)}</span>
+          </td>
+          <td>${escapeHtml(item.market || "")}</td>
+          <td>${formatPrice(item)}</td>
+          <td class="${changeClass(item.change)}">${formatChange(item)}</td>
+          <td>${formatNumber(item.indicators?.rsi14, 2)}</td>
+          <td><span class="badge ${toneClass(item.trend?.short)}">${escapeHtml(item.trend?.short || "--")}</span></td>
+          <td><span class="badge ${toneClass(item.trend?.medium)}">${escapeHtml(item.trend?.medium || "--")}</span></td>
+          <td><span class="badge ${actionClass(item.action)}">${escapeHtml(item.action || "--")}</span></td>
+          <td>${formatRange(item, item.levels?.buy)}</td>
+          <td>${formatLevel(item, item.levels?.stopLoss)}</td>
+        </tr>
+      `).join("");
+
+      els.stockTable.querySelectorAll("tr[data-symbol]").forEach((row) => {
+        row.addEventListener("click", () => openDetail(row.dataset.symbol));
+      });
+    }
+
+    function renderAssetGrid(container, items) {
+      const valid = items.filter((item) => item.ok);
+      if (!valid.length) {
+        container.innerHTML = `<div class="empty">目前沒有可顯示的資料。</div>`;
+        return;
+      }
+      container.innerHTML = valid.map(assetCardHtml).join("");
+      bindAssetCards(container, valid);
+    }
+
+    function assetCardHtml(item) {
+      return `
+        <button class="asset-card" type="button" data-symbol="${escapeAttr(item.symbol)}">
+          <div class="asset-top">
+            <div>
+              <div class="symbol">${escapeHtml(item.symbol)} · ${escapeHtml(item.currency || "")}</div>
+              <div class="name">${escapeHtml(item.name)}</div>
+            </div>
+            <div class="score-ring">${Number.isFinite(item.score) ? item.score : "--"}</div>
+          </div>
+          <div class="price">${formatPrice(item)}</div>
+          <div class="change ${changeClass(item.change)}">${formatChange(item)}</div>
+          <div class="levels">
+            <div class="level"><span>短期</span><strong>${escapeHtml(item.trend?.short || "--")}</strong></div>
+            <div class="level"><span>建議</span><strong>${escapeHtml(item.action || "--")}</strong></div>
+          </div>
+        </button>
+      `;
+    }
+
+    function bindAssetCards(container, items) {
+      container.querySelectorAll("[data-symbol]").forEach((card, index) => {
+        card.addEventListener("click", () => openDetail(items[index].symbol));
+      });
+    }
+
+    function renderNews(container, news) {
+      if (!news.length) {
+        container.innerHTML = `<div class="empty">目前沒有新聞資料。</div>`;
+        return;
+      }
+      container.innerHTML = news.slice(0, 8).map((item) => `
+        <a class="news-item" href="${escapeAttr(item.link)}" target="_blank" rel="noreferrer">
+          <div class="news-title">${escapeHtml(item.title)}</div>
+          <div class="news-meta">${escapeHtml(item.publisher || "Yahoo Finance")} · ${item.publishedAt ? formatDateTime(item.publishedAt) : ""}</div>
+        </a>
+      `).join("");
+    }
+
+    async function runSearch() {
+      const query = els.searchInput.value.trim();
+      if (!query) {
+        closeSearchResults();
+        return;
+      }
+      hideError();
+      els.searchResults.classList.remove("hide");
+      els.searchResults.innerHTML = `<div class="loading">搜尋 Yahoo Finance 中</div>`;
+
+      try {
+        const data = await apiGet(`/api/search?q=${encodeURIComponent(query)}`);
+        renderSearchResults(data.results || [], data.news || []);
+      } catch (error) {
+        els.searchResults.innerHTML = `<div class="loading">${escapeHtml(error.message)}</div>`;
+      } finally {
+        refreshIcons();
+      }
+    }
+
+    function renderSearchResults(results, news) {
+      const resultHtml = results.map((item) => `
+        <button class="search-result" type="button" data-symbol="${escapeAttr(item.symbol)}">
+          <span>
+            <strong>${escapeHtml(item.symbol)}</strong> ${escapeHtml(item.name || "")}<br>
+            <span class="symbol">${escapeHtml(item.category || "")} · ${escapeHtml(item.market || item.exchange || "")} · Yahoo 驗證</span>
+          </span>
+          <span class="badge info">${escapeHtml(item.assetClass || "")}</span>
+        </button>
+      `).join("");
+
+      const newsHtml = news.slice(0, 3).map((item) => `
+        <a class="search-result" href="${escapeAttr(item.link)}" target="_blank" rel="noreferrer">
+          <span>
+            <strong>${escapeHtml(item.title)}</strong><br>
+            <span class="symbol">${escapeHtml(item.publisher || "Yahoo Finance")} · ${item.publishedAt ? formatDateTime(item.publishedAt) : ""}</span>
+          </span>
+          <span class="badge">新聞</span>
+        </a>
+      `).join("");
+
+      els.searchResults.innerHTML = resultHtml || newsHtml ? `${resultHtml}${newsHtml}` : `<div class="loading">沒有找到符合的代號或新聞。</div>`;
+      els.searchResults.querySelectorAll("button[data-symbol]").forEach((button) => {
+        button.addEventListener("click", () => {
+          closeSearchResults();
+          openDetail(button.dataset.symbol);
+        });
+      });
+    }
+
+    function closeSearchResults() {
+      els.searchResults.classList.add("hide");
+    }
+
+    async function openDetail(symbol) {
+      els.detailModal.classList.add("open");
+      els.detailLoading.classList.remove("hide");
+      els.detailContent.classList.add("hide");
+      document.querySelector("#detailTitle").textContent = "載入中";
+      document.querySelector("#detailSymbol").textContent = symbol;
+      document.querySelector("#detailYahooName").textContent = "";
+      refreshIcons();
+
+      try {
+        const data = await apiGet(`/api/quote?symbol=${encodeURIComponent(symbol)}`);
+        renderDetail(data.item, data.news || []);
+      } catch (error) {
+        els.detailLoading.textContent = error.message;
+      } finally {
+        refreshIcons();
+      }
+    }
+
+    function renderDetail(item, news) {
+      els.detailLoading.classList.add("hide");
+      els.detailContent.classList.remove("hide");
+      document.querySelector("#detailTitle").textContent = item.name;
+      document.querySelector("#detailSymbol").textContent = `${item.symbol} · ${item.exchange || item.market || ""} · ${item.currency || ""}`;
+      document.querySelector("#detailYahooName").textContent = `Yahoo 名稱：${item.yahooName || item.name} · 更新：${formatDateTime(item.updatedAt)} · ${item.source}`;
+      document.querySelector("#detailCategory").textContent = item.category || item.assetClass || "--";
+      document.querySelector("#detailPrice").textContent = formatPrice(item);
+      const changeElement = document.querySelector("#detailChange");
+      changeElement.textContent = formatChange(item);
+      changeElement.className = `change ${changeClass(item.change)}`;
+      document.querySelector("#detailScore").textContent = Number.isFinite(item.score) ? item.score : "--";
+
+      document.querySelector("#metricRsi").textContent = formatNumber(item.indicators?.rsi14, 2);
+      document.querySelector("#metricMacd").textContent = formatNumber(item.indicators?.macdHistogram, 4);
+      document.querySelector("#metricSma20").textContent = formatLevel(item, item.indicators?.sma20);
+      document.querySelector("#metricSma60").textContent = formatLevel(item, item.indicators?.sma60);
+      document.querySelector("#metricShort").textContent = item.trend?.short || "--";
+      document.querySelector("#metricMedium").textContent = item.trend?.medium || "--";
+      document.querySelector("#metricLong").textContent = item.trend?.long || "--";
+      document.querySelector("#metricAction").textContent = item.action || "--";
+      document.querySelector("#levelBuy").textContent = formatRange(item, item.levels?.buy);
+      document.querySelector("#levelSell").textContent = formatRange(item, item.levels?.sell);
+      document.querySelector("#levelTakeProfit").textContent = formatLevel(item, item.levels?.takeProfit);
+      document.querySelector("#levelStopLoss").textContent = formatLevel(item, item.levels?.stopLoss);
+      document.querySelector("#detailNote").textContent = item.note || "";
+      renderList(document.querySelector("#reasonList"), item.reasons || []);
+      renderList(document.querySelector("#riskList"), item.risks || []);
+      renderNews(document.querySelector("#detailNews"), news);
+      drawDetailChart(document.querySelector("#detailChart"), item.candles || [], item.change >= 0);
+    }
+
+    function closeDetail() {
+      els.detailModal.classList.remove("open");
+    }
+
+    function renderList(container, items) {
+      container.innerHTML = items.length ? items.map((item) => `<li>${escapeHtml(item)}</li>`).join("") : "<li>目前沒有額外提示。</li>";
+    }
+
+    function renderFxConverter() {
+      const forex = state.dashboard?.groups?.forex || [];
+      const amount = Number(els.fxAmount.value || 0);
+      const from = els.fxFrom.value;
+      const to = els.fxTo.value;
+      const usdPerUnit = buildUsdPerCurrency(forex);
+      if (!Number.isFinite(amount) || !usdPerUnit[from] || !usdPerUnit[to]) {
+        els.fxResult.textContent = "--";
+        return;
+      }
+      const converted = amount * usdPerUnit[from] / usdPerUnit[to];
+      els.fxResult.textContent = `${formatNumber(converted, 4)} ${to}`;
+    }
+
+    function buildUsdPerCurrency(forex) {
+      const priceOf = (symbol) => forex.find((item) => item.ok && item.symbol === symbol)?.price;
+      const usdTwd = priceOf("USDTWD=X") || priceOf("TWD=X");
+      const usdJpy = priceOf("JPY=X");
+      const eurUsd = priceOf("EURUSD=X");
+      const gbpUsd = priceOf("GBPUSD=X");
+      const audUsd = priceOf("AUDUSD=X");
+      const usdCnh = priceOf("USDCNH=X");
+      return {
+        USD: 1,
+        TWD: usdTwd ? 1 / usdTwd : null,
+        JPY: usdJpy ? 1 / usdJpy : null,
+        EUR: eurUsd || null,
+        GBP: gbpUsd || null,
+        AUD: audUsd || null,
+        CNH: usdCnh ? 1 / usdCnh : null,
+      };
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === tab);
+      });
+      document.querySelectorAll(".panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `panel-${tab}`);
+      });
+    }
+
+    function activateSegment(activeButton) {
+      activeButton.parentElement.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button === activeButton);
+      });
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      if (!state.autoRefresh) return;
+      state.autoTimer = setInterval(refreshDashboard, AUTO_REFRESH_MS);
+    }
+
+    function stopAutoRefresh() {
+      if (state.autoTimer) clearInterval(state.autoTimer);
+      state.autoTimer = null;
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || data?.ok === false) {
+        throw new Error(data?.error || `API 回應 ${response.status}`);
+      }
+      return data;
+    }
+
+    function matchesPriceRange(item, range) {
+      if (range === "all") return true;
+      const price = Number(item.price);
+      if (!Number.isFinite(price)) return false;
+      if (range === "lt100") return price < 100;
+      if (range === "100to200") return price >= 100 && price <= 200;
+      if (range === "gt200") return price > 200;
+      return true;
+    }
+
+    function formatPrice(item) {
+      if (!item || !Number.isFinite(Number(item.price))) return "--";
+      if (item.symbol === "^TNX") return `${formatNumber(item.price, 3)}%`;
+      const currency = item.currency ? `${item.currency} ` : "";
+      return `${currency}${formatNumber(item.price, precisionFor(item.price))}`;
+    }
+
+    function formatLevel(item, value) {
+      if (!Number.isFinite(Number(value))) return "--";
+      if (item?.symbol === "^TNX") return `${formatNumber(value, 3)}%`;
+      return `${item?.currency ? `${item.currency} ` : ""}${formatNumber(value, precisionFor(value))}`;
+    }
+
+    function formatRange(item, values) {
+      if (!Array.isArray(values) || values.length < 2) return "--";
+      return `${formatLevel(item, values[0])} - ${formatLevel(item, values[1])}`;
+    }
+
+    function precisionFor(value) {
+      const number = Math.abs(Number(value));
+      if (number >= 1000) return 0;
+      if (number >= 100) return 2;
+      if (number >= 10) return 2;
+      return 4;
+    }
+
+    function formatChange(item) {
+      if (!item) return "--";
+      const change = formatSignedNumber(item.change, precisionFor(item.price));
+      const percent = formatSignedPercent(item.changePercent);
+      return `${change} (${percent})`;
+    }
+
+    function formatSignedPercent(value) {
+      if (!Number.isFinite(Number(value))) return "--";
+      const number = Number(value);
+      return `${number > 0 ? "+" : ""}${number.toFixed(2)}%`;
+    }
+
+    function formatSignedNumber(value, digits = 2) {
+      if (!Number.isFinite(Number(value))) return "--";
+      const number = Number(value);
+      return `${number > 0 ? "+" : ""}${formatNumber(number, digits)}`;
+    }
+
+    function formatNumber(value, digits = 2) {
+      if (!Number.isFinite(Number(value))) return "--";
+      return Number(value).toLocaleString("zh-TW", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "--";
+      return new Intl.DateTimeFormat("zh-TW", {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(value));
+    }
+
+    function tickClock() {
+      els.clock.textContent = new Intl.DateTimeFormat("zh-TW", {
+        timeZone: "Asia/Taipei",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date());
+    }
+
+    function changeClass(value) {
+      const number = Number(value);
+      if (number > 0) return "rise";
+      if (number < 0) return "fall";
+      return "flat";
+    }
+
+    function toneClass(value) {
+      const text = String(value || "");
+      if (text.includes("多") || text.includes("漲") || text.includes("強")) return "bull";
+      if (text.includes("空") || text.includes("跌") || text.includes("弱")) return "bear";
+      if (text.includes("觀察") || text.includes("震盪") || text.includes("中性")) return "watch";
+      return "info";
+    }
+
+    function actionClass(value) {
+      const text = String(value || "");
+      if (text.includes("買") || text.includes("積極") || text.includes("偏多")) return "buy";
+      if (text.includes("觀望") || text.includes("偏空")) return "sell";
+      return "watch";
+    }
+
+    function drawSpark(canvas, candles, up) {
+      if (!canvas || !Array.isArray(candles) || candles.length < 2) return;
+      const context = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      canvas.width = Math.max(240, Math.round(rect.width * scale));
+      canvas.height = Math.max(46, Math.round(rect.height * scale));
+      context.scale(scale, scale);
+      drawLineChart(context, rect.width, rect.height, candles, up);
+    }
+
+    function drawDetailChart(canvas, candles, up) {
+      if (!canvas || !Array.isArray(candles) || candles.length < 2) return;
+      const context = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      canvas.width = Math.max(520, Math.round(rect.width * scale));
+      canvas.height = Math.max(220, Math.round(rect.height * scale));
+      context.scale(scale, scale);
+      drawLineChart(context, rect.width, rect.height, candles, up, true);
+    }
+
+    function drawLineChart(context, width, height, candles, up, detailed = false) {
+      context.clearRect(0, 0, width, height);
+      const closes = candles.map((row) => Number(row.close)).filter(Number.isFinite);
+      if (closes.length < 2) return;
+      const min = Math.min(...closes);
+      const max = Math.max(...closes);
+      const pad = detailed ? 18 : 5;
+      const xFor = (index) => pad + (index / Math.max(1, closes.length - 1)) * (width - pad * 2);
+      const yFor = (value) => {
+        if (max === min) return height / 2;
+        return height - pad - ((value - min) / (max - min)) * (height - pad * 2);
+      };
+
+      context.strokeStyle = "rgba(101, 114, 109, 0.22)";
+      context.lineWidth = 1;
+      if (detailed) {
+        for (let i = 1; i <= 3; i += 1) {
+          const y = (height / 4) * i;
+          context.beginPath();
+          context.moveTo(pad, y);
+          context.lineTo(width - pad, y);
+          context.stroke();
+        }
+      }
+
+      context.strokeStyle = up ? "#c43232" : "#168156";
+      context.lineWidth = detailed ? 3 : 2;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.beginPath();
+      closes.forEach((value, index) => {
+        const x = xFor(index);
+        const y = yFor(value);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.stroke();
+
+      context.fillStyle = up ? "#c43232" : "#168156";
+      context.beginPath();
+      context.arc(xFor(closes.length - 1), yFor(closes.at(-1)), detailed ? 4 : 3, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    function showError(message) {
+      els.errorBox.textContent = message;
+      els.errorBox.classList.add("show");
+    }
+
+    function hideError() {
+      els.errorBox.textContent = "";
+      els.errorBox.classList.remove("show");
+    }
+
+    function refreshIcons() {
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+
+    function debounce(fn, delay) {
+      let timer = null;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+  </script>
+</body>
+</html>

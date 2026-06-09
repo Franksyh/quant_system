@@ -1,0 +1,84 @@
+# ====================================================
+#   XScript - 台股 MA5 / MA10 / MA20 黃金交叉偵測
+#   適用平台：XS / XScript 編譯器
+# ====================================================
+
+var stock_list = tw.stock_list();  # 取得所有上市公司代碼
+var total = size(stock_list);
+
+log("? 抓到上市股票共 " + total + " 檔");
+
+var golden = [];   # 黃金交叉清單
+var death = [];    # 死亡交叉清單
+
+
+# ----------------------------------------------------
+#  計算移動平均
+# ----------------------------------------------------
+func MA(arr, period)
+{
+    if (size(arr) < period)
+        return 0;
+
+    var sum = 0;
+    for (var i = size(arr) - period; i < size(arr); i++)
+        sum += arr[i];
+
+    return sum / period;
+}
+
+
+# ----------------------------------------------------
+#  分析每一檔股票
+# ----------------------------------------------------
+for (var i = 0; i < total; i++)
+{
+    var code = stock_list[i];
+
+    # 取得 80 根日K
+    var k = tw.kbars(code, "D", 80);
+
+    if (size(k.close) < 25)
+        continue;
+
+    var close_arr = k.close;
+
+    var close = last(close_arr);
+    var ma5   = MA(close_arr, 5);
+    var ma10  = MA(close_arr, 10);
+    var ma20  = MA(close_arr, 20);
+
+    # -------------------------------
+    # 你的黃金交叉定義：
+    # MA5 > MA10 > MA20
+    # 並且 close < 所有均線
+    # -------------------------------
+    if (ma5 > ma10 and ma10 > ma20 and
+  	close > ma5 and close > ma10 and close > ma20)
+    {
+        push(golden, code);
+    }
+
+    # -------------------------------
+    # 你的死亡交叉定義：
+    # MA5 < MA10 < MA20
+    # 並且 close > 所有均線
+    # -------------------------------
+    if (ma5 < ma10 and ma10 < ma20 and
+   	 close < ma5 and close < ma10 and close < ma20)
+    {
+        push(death, code);
+    }
+}
+
+# ----------------------------------------------------
+#  結果輸出
+# ----------------------------------------------------
+log("=== ?? 黃金交叉 ===");
+for (var i = 0; i < size(golden); i++)
+    log(golden[i]);
+
+log("=== ?? 死亡交叉 ===");
+for (var i = 0; i < size(death); i++)
+    log(death[i]);
+

@@ -1,0 +1,1674 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quant System 策略與 TG 控制台</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --panel-soft: #f7f9fb;
+      --ink: #17212b;
+      --muted: #647282;
+      --line: #dfe5eb;
+      --green: #0f7a4d;
+      --green-soft: #e9f6ef;
+      --red: #b33a3a;
+      --red-soft: #faeaea;
+      --amber: #99680f;
+      --amber-soft: #fff5dc;
+      --blue: #1d5f86;
+      --blue-soft: #e9f3f8;
+      --shadow: 0 10px 24px rgba(22, 33, 43, 0.06);
+      color-scheme: light;
+      font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 304px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 20px 16px;
+      background: #fff;
+      border-right: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #102433;
+      color: #fff;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section {
+      margin: 0 0 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .section h2,
+    .workspace h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .field label,
+    .small-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .row > * {
+      min-width: 0;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      color: var(--ink);
+      outline: none;
+      padding: 10px 11px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    textarea {
+      min-height: 170px;
+      resize: vertical;
+      line-height: 1.55;
+      font-family: Consolas, "Microsoft JhengHei", monospace;
+      font-size: 13px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(15,122,77,.11);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: #102433;
+      color: #fff;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .btn svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.2;
+    }
+
+    .btn.secondary {
+      background: var(--panel-soft);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      font-weight: 700;
+    }
+
+    .btn.green {
+      background: var(--green);
+    }
+
+    .btn.blue {
+      background: var(--blue);
+    }
+
+    .btn.red {
+      background: var(--red);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+    }
+
+    .btn.icon-only {
+      width: 38px;
+      padding: 0;
+      flex: 0 0 38px;
+    }
+
+    .workspace {
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 23px;
+    }
+
+    .topbar p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .pill strong {
+      color: var(--ink);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(330px, .8fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+      padding: 5px;
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .tab {
+      min-height: 38px;
+      padding: 8px 7px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .tab.active {
+      background: #fff;
+      border-color: var(--line);
+      color: #102433;
+      box-shadow: 0 4px 12px rgba(22, 33, 43, .06);
+    }
+
+    .signal-board {
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .signal-card {
+      display: grid;
+      align-content: center;
+      gap: 10px;
+      min-height: 154px;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .signal-word {
+      font-size: 40px;
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .signal-card.buy {
+      background: linear-gradient(180deg, #ffffff, var(--green-soft));
+      border-color: #b9dec8;
+    }
+
+    .signal-card.buy .signal-word {
+      color: var(--green);
+    }
+
+    .signal-card.sell {
+      background: linear-gradient(180deg, #ffffff, var(--red-soft));
+      border-color: #efbeb9;
+    }
+
+    .signal-card.sell .signal-word {
+      color: var(--red);
+    }
+
+    .signal-card.hold .signal-word {
+      color: var(--amber);
+    }
+
+    .signal-meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      min-height: 72px;
+      padding: 11px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .check b {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .check.pass {
+      border-color: #bedfc9;
+      background: #fbfefd;
+      color: var(--ink);
+    }
+
+    .check.pass b {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .check.fail b {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .strategy-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .strategy-card {
+      min-height: 128px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .strategy-card h4 {
+      margin: 0 0 7px;
+      font-size: 14px;
+    }
+
+    .strategy-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .image-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .image-strip figure {
+      margin: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .image-strip img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1.45;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .image-strip figcaption {
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .command-box {
+      display: grid;
+      gap: 8px;
+    }
+
+    .command-box .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .command-box .btn {
+      width: 100%;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    #sendCommandBtn {
+      grid-column: 1 / -1;
+    }
+
+    .command-preview {
+      min-height: 42px;
+      padding: 10px 11px;
+      border-radius: 8px;
+      border: 1px dashed #b8c1b6;
+      background: var(--panel-soft);
+      font-family: Consolas, monospace;
+      color: var(--ink);
+      overflow-wrap: anywhere;
+    }
+
+    .log {
+      display: grid;
+      gap: 7px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .log-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .log-item.ok {
+      background: var(--green-soft);
+      color: #21533b;
+    }
+
+    .log-item.bad {
+      background: var(--red-soft);
+      color: #793131;
+    }
+
+    .footer-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .split-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .hide {
+      display: none !important;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .grid,
+      .signal-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .workspace {
+        padding: 14px;
+      }
+
+      .topbar {
+        display: grid;
+      }
+
+      .status-line {
+        justify-content: flex-start;
+      }
+
+      .tabs,
+      .metric-grid,
+      .strategy-grid,
+      .image-strip,
+      .split-fields {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        flex-wrap: wrap;
+      }
+
+      .row .btn:not(.icon-only) {
+        flex: 1 1 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i data-lucide="candlestick-chart"></i></div>
+        <div>
+          <h1>Quant Trade</h1>
+          <p>策略、訊號、TG 操作</p>
+        </div>
+      </div>
+
+      <section class="section">
+        <h2>Telegram 連線</h2>
+        <div class="field">
+          <label for="tgToken">Bot Token</label>
+          <input id="tgToken" type="password" autocomplete="off" placeholder="123456:ABC...">
+        </div>
+        <div class="field">
+          <label for="tgChatId">Chat ID</label>
+          <input id="tgChatId" type="text" autocomplete="off" placeholder="例如 123456789">
+        </div>
+        <div class="row">
+          <button class="btn green" id="saveTgBtn" type="button" title="保存 Telegram 設定">
+            <i data-lucide="save"></i><span>保存</span>
+          </button>
+          <button class="btn secondary" id="testTgBtn" type="button" title="發送測試訊息">
+            <i data-lucide="send"></i><span>測試</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>常用指令</h2>
+        <div class="command-box">
+          <div class="field">
+            <label for="commandType">指令</label>
+            <select id="commandType">
+              <option value="/add">/add 加入清單</option>
+              <option value="/remove">/remove 移除清單</option>
+              <option value="/balance">/balance 更新資金</option>
+              <option value="/strategy">/strategy 切換策略</option>
+              <option value="/stoploss">/stoploss 停損</option>
+              <option value="/takeprofit">/takeprofit 停利</option>
+              <option value="/maxorder">/maxorder 最大下單量</option>
+              <option value="/mode">/mode 下單模式</option>
+              <option value="/blackswan">/blackswan 黑天鵝</option>
+              <option value="/setposition">/setposition 同步持倉</option>
+              <option value="/list">/list</option>
+              <option value="/positions">/positions</option>
+              <option value="/status">/status</option>
+              <option value="/runonce">/runonce</option>
+              <option value="/help">/help</option>
+            </select>
+          </div>
+          <div class="field" data-command-field="symbol">
+            <label for="commandSymbol">股票代號</label>
+            <input id="commandSymbol" type="text" inputmode="numeric" placeholder="2330">
+          </div>
+          <div class="field" data-command-field="value">
+            <label for="commandValue">數值</label>
+            <input id="commandValue" type="text" placeholder="500000 / 1% / 35 / 1000">
+          </div>
+          <div class="field hide" data-command-field="strategy">
+            <label for="commandStrategy">策略</label>
+            <select id="commandStrategy">
+              <option value="default">default</option>
+              <option value="cross">cross</option>
+              <option value="short">short</option>
+              <option value="long">long</option>
+              <option value="rule35">rule35</option>
+              <option value="vcp">vcp</option>
+            </select>
+          </div>
+          <div class="field hide" data-command-field="mode">
+            <label for="commandMode">模式</label>
+            <select id="commandMode">
+              <option value="paper">paper</option>
+              <option value="live">live</option>
+            </select>
+          </div>
+          <div class="field hide" data-command-field="swan">
+            <label for="commandSwan">黑天鵝</label>
+            <select id="commandSwan">
+              <option value="on">on</option>
+              <option value="off">off</option>
+            </select>
+          </div>
+          <div class="split-fields hide" data-command-field="position">
+            <div class="field">
+              <label for="positionQty">股數</label>
+              <input id="positionQty" type="number" min="0" step="1" placeholder="100">
+            </div>
+            <div class="field">
+              <label for="positionAvg">平均成本</label>
+              <input id="positionAvg" type="number" min="0" step="0.01" placeholder="500">
+            </div>
+          </div>
+          <div class="command-preview" id="commandPreview">/add 2330</div>
+          <div class="row">
+            <button class="btn secondary" id="copyCommandBtn" type="button" title="複製指令">
+              <i data-lucide="copy"></i><span>複製</span>
+            </button>
+            <button class="btn blue" id="shareCommandBtn" type="button" title="開啟 Telegram">
+              <i data-lucide="external-link"></i><span>開啟 TG</span>
+            </button>
+            <button class="btn green" id="sendCommandBtn" type="button" title="以 Bot 發送到 Chat ID">
+              <i data-lucide="send"></i><span>送出</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>操作紀錄</h2>
+        <div class="log" id="eventLog"></div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <div class="topbar">
+        <div>
+          <h2>交易策略控制台</h2>
+          <p>選擇策略、貼上行情資料，快速檢查訊號並推送到 Telegram。</p>
+        </div>
+        <div class="status-line">
+          <span class="pill">策略 <strong id="activeStrategyText">vcp</strong></span>
+          <span class="pill">資料 <strong id="dataCountText">0</strong> 根</span>
+          <span class="pill">TG <strong id="tgStateText">未設定</strong></span>
+        </div>
+      </div>
+
+      <div class="grid">
+        <section class="panel">
+          <div class="panel-head">
+            <h3>策略訊號</h3>
+            <div class="row">
+              <button class="btn secondary" id="loadSampleBtn" type="button" title="載入範例資料">
+                <i data-lucide="file-input"></i><span>範例</span>
+              </button>
+              <button class="btn green" id="analyzeBtn" type="button" title="分析訊號">
+                <i data-lucide="activity"></i><span>分析</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="tabs" id="strategyTabs">
+            <button class="tab active" type="button" data-strategy="vcp">VCP</button>
+            <button class="tab" type="button" data-strategy="rule35">35法則</button>
+            <button class="tab" type="button" data-strategy="short">短線</button>
+            <button class="tab" type="button" data-strategy="long">長線</button>
+            <button class="tab" type="button" data-strategy="cross">交叉</button>
+            <button class="tab" type="button" data-strategy="default">Default</button>
+          </div>
+
+          <div class="field">
+            <label for="csvInput">行情資料 CSV</label>
+            <textarea id="csvInput" spellcheck="false" placeholder="date,open,high,low,close,volume"></textarea>
+          </div>
+
+          <div class="signal-board">
+            <div class="signal-card hold" id="signalCard">
+              <div class="signal-word" id="signalWord">HOLD</div>
+              <div class="signal-meta" id="signalMeta">尚未分析</div>
+              <button class="btn blue" id="sendSignalBtn" type="button" title="發送訊號到 Telegram">
+                <i data-lucide="send"></i><span>TG 發送訊號</span>
+              </button>
+            </div>
+
+            <div>
+              <div class="metric-grid" id="metricGrid"></div>
+              <div class="checklist" id="checklist"></div>
+            </div>
+          </div>
+
+          <div class="strategy-grid">
+            <article class="strategy-card">
+              <h4>VCP 波動收縮</h4>
+              <ul>
+                <li>趨勢站上 SMA50 / SMA200</li>
+                <li>2 至 4 次收縮且幅度遞減</li>
+                <li>Pivot 突破搭配 1.5 倍量</li>
+                <li>跌破 Pivot / EMA10 / EMA20 / SMA50 出場</li>
+              </ul>
+            </article>
+            <article class="strategy-card">
+              <h4>35 法則</h4>
+              <ul>
+                <li>3/5 EMA 金叉與 35 日突破</li>
+                <li>3% 至 5% 回檔靠近 EMA 支撐</li>
+                <li>乖離過高、RSI 超買、3/5 EMA 死叉出場</li>
+                <li>預設 35% 分批停利</li>
+              </ul>
+            </article>
+            <article class="strategy-card">
+              <h4>短線 / 當沖</h4>
+              <ul>
+                <li>EMA5 / EMA10 / EMA20 順勢排列</li>
+                <li>MACD 金叉且 RSI 未過熱</li>
+                <li>開盤突破、VWAP 回踩、區間快進快出</li>
+                <li>每筆風險 0.5% 至 1%</li>
+              </ul>
+            </article>
+            <article class="strategy-card">
+              <h4>長線 / 趨勢</h4>
+              <ul>
+                <li>價格站上 SMA200</li>
+                <li>SMA50 / SMA100 / SMA200 多頭排列</li>
+                <li>長週期 MACD 金叉</li>
+                <li>跌破 SMA50 或 MACD 死叉降風險</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <aside class="panel">
+          <div class="panel-head">
+            <h3>參考與風控</h3>
+            <button class="btn secondary icon-only" id="clearLogBtn" type="button" title="清除紀錄">
+              <i data-lucide="eraser"></i>
+            </button>
+          </div>
+
+          <div class="image-strip">
+            <figure>
+              <img src="../quant_system投資策略/VCP型態.jpg" alt="VCP 價格波動收縮">
+              <figcaption>VCP 價格波動收縮</figcaption>
+            </figure>
+            <figure>
+              <img src="../quant_system投資策略/買入及賣出訊號.jpg" alt="買入與賣出警告">
+              <figcaption>買入與賣出警告</figcaption>
+            </figure>
+          </div>
+
+          <section class="section" style="margin-top:14px;">
+            <h2>當沖檢查</h2>
+            <div class="field">
+              <label for="dayMode">型態</label>
+              <select id="dayMode">
+                <option value="breakout">開盤突破</option>
+                <option value="pullback">均線 / VWAP 回踩</option>
+                <option value="reversal">爆量反轉</option>
+                <option value="range">區間震盪</option>
+                <option value="theme">題材動能</option>
+              </select>
+            </div>
+            <div class="split-fields">
+              <div class="field">
+                <label for="riskPct">單筆風險 %</label>
+                <input id="riskPct" type="number" min="0" step="0.1" value="1">
+              </div>
+              <div class="field">
+                <label for="rewardRatio">盈虧比</label>
+                <input id="rewardRatio" type="number" min="1" step="0.1" value="2">
+              </div>
+            </div>
+            <div class="checklist" id="dayChecklist"></div>
+          </section>
+
+          <section class="section">
+            <h2>交易狀態匯入</h2>
+            <div class="field">
+              <label for="stateInput">trading_state.json</label>
+              <textarea id="stateInput" spellcheck="false" placeholder='{"stock_list":["2330"],"strategy_mode":"vcp"}'></textarea>
+            </div>
+            <div class="row">
+              <button class="btn secondary" id="loadStateBtn" type="button" title="套用交易狀態">
+                <i data-lucide="upload"></i><span>套用</span>
+              </button>
+              <button class="btn blue" id="sendStatusBtn" type="button" title="發送狀態到 Telegram">
+                <i data-lucide="message-square"></i><span>TG 狀態</span>
+              </button>
+            </div>
+            <p class="footer-note">HTML 只保存瀏覽器內設定；正式交易仍以 quant_system 的 Python 程式與 .env 設定為準。</p>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>
+    const STRATEGY_NAMES = {
+      default: "原始 MA20/MA60 + RSI + MACD + BIAS",
+      cross: "MA5/MA10/MA20 黃金/死亡交叉",
+      short: "短線 EMA + MACD + RSI",
+      long: "長線 SMA50/100/200 + MACD",
+      rule35: "35法則 3/5 EMA + 35日突破/停利",
+      vcp: "VCP 波動收縮型態"
+    };
+
+    const STORAGE_KEY = "quantSystemStrategyTg";
+    let activeStrategy = "vcp";
+    let latestResult = null;
+    let latestRows = [];
+    let importedState = null;
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    function round(value, digits = 2) {
+      if (!Number.isFinite(value)) return "-";
+      return Number(value).toFixed(digits);
+    }
+
+    function pct(value, digits = 2) {
+      if (!Number.isFinite(value)) return "-";
+      return `${(value * 100).toFixed(digits)}%`;
+    }
+
+    function getSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function saveSettings(settings) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      updateTgState();
+    }
+
+    function updateTgState() {
+      const token = $("#tgToken").value.trim();
+      const chatId = $("#tgChatId").value.trim();
+      $("#tgStateText").textContent = token && chatId ? "已設定" : "未設定";
+    }
+
+    function addLog(message, type = "") {
+      const log = $("#eventLog");
+      const item = document.createElement("div");
+      item.className = `log-item ${type}`;
+      item.textContent = `${new Date().toLocaleTimeString()}  ${message}`;
+      log.prepend(item);
+    }
+
+    function parseNumber(value) {
+      if (value === undefined || value === null) return NaN;
+      const cleaned = String(value).replace(/,/g, "").trim();
+      if (!cleaned) return NaN;
+      return Number(cleaned);
+    }
+
+    function normalizeHeader(header) {
+      const key = String(header || "").trim().toLowerCase();
+      const map = {
+        日期: "date",
+        時間: "date",
+        開盤: "open",
+        最高: "high",
+        最低: "low",
+        收盤: "close",
+        成交量: "volume",
+        股數: "volume",
+        o: "open",
+        h: "high",
+        l: "low",
+        c: "close",
+        v: "volume"
+      };
+      return map[key] || key;
+    }
+
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (!lines.length) return [];
+      const delimiter = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+      const first = lines[0].split(delimiter).map(cell => cell.trim());
+      const hasHeader = first.some(cell => /date|open|high|low|close|volume|日期|開盤|最高|最低|收盤|成交量/i.test(cell));
+      const headers = hasHeader
+        ? first.map(normalizeHeader)
+        : (first.length >= 6 ? ["date", "open", "high", "low", "close", "volume"] : ["open", "high", "low", "close", "volume"]);
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+
+      return dataLines.map((line, index) => {
+        const cells = line.split(delimiter).map(cell => cell.trim());
+        const row = { date: String(index + 1), open: NaN, high: NaN, low: NaN, close: NaN, volume: 0 };
+        headers.forEach((header, cellIndex) => {
+          if (header === "date") row.date = cells[cellIndex] || row.date;
+          if (["open", "high", "low", "close", "volume"].includes(header)) row[header] = parseNumber(cells[cellIndex]);
+        });
+        if (!Number.isFinite(row.high)) row.high = row.close;
+        if (!Number.isFinite(row.low)) row.low = row.close;
+        if (!Number.isFinite(row.open)) row.open = row.close;
+        if (!Number.isFinite(row.volume)) row.volume = 0;
+        return row;
+      }).filter(row => Number.isFinite(row.close));
+    }
+
+    function avg(values) {
+      const valid = values.filter(Number.isFinite);
+      if (!valid.length) return NaN;
+      return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+    }
+
+    function sma(values, period) {
+      return values.map((_, index) => {
+        if (index + 1 < period) return NaN;
+        return avg(values.slice(index + 1 - period, index + 1));
+      });
+    }
+
+    function ema(values, period) {
+      const alpha = 2 / (period + 1);
+      const result = [];
+      values.forEach((value, index) => {
+        if (!Number.isFinite(value)) {
+          result.push(index ? result[index - 1] : NaN);
+          return;
+        }
+        if (!index || !Number.isFinite(result[index - 1])) {
+          result.push(value);
+        } else {
+          result.push(value * alpha + result[index - 1] * (1 - alpha));
+        }
+      });
+      return result;
+    }
+
+    function rsi(values, period = 14) {
+      return values.map((_, index) => {
+        if (index < period) return 50;
+        let gain = 0;
+        let loss = 0;
+        for (let i = index - period + 1; i <= index; i += 1) {
+          const diff = values[i] - values[i - 1];
+          if (diff > 0) gain += diff;
+          if (diff < 0) loss -= diff;
+        }
+        const avgGain = gain / period;
+        const avgLoss = loss / period;
+        if (avgLoss === 0 && avgGain > 0) return 100;
+        if (avgGain === 0 && avgLoss > 0) return 0;
+        if (avgGain === 0 && avgLoss === 0) return 50;
+        const rs = avgGain / avgLoss;
+        return 100 - 100 / (1 + rs);
+      });
+    }
+
+    function macd(values, fast = 12, slow = 26, signal = 9) {
+      const fastLine = ema(values, fast);
+      const slowLine = ema(values, slow);
+      const macdLine = values.map((_, index) => fastLine[index] - slowLine[index]);
+      const signalLine = ema(macdLine, signal);
+      return { macdLine, signalLine };
+    }
+
+    function rollingMax(values, period, indexOffset = 0) {
+      const index = values.length - 1 - indexOffset;
+      if (index < 0) return NaN;
+      const start = Math.max(0, index - period + 1);
+      return Math.max(...values.slice(start, index + 1));
+    }
+
+    function rollingMin(values, period, indexOffset = 0) {
+      const index = values.length - 1 - indexOffset;
+      if (index < 0) return NaN;
+      const start = Math.max(0, index - period + 1);
+      return Math.min(...values.slice(start, index + 1));
+    }
+
+    function rangePct(rows) {
+      const highs = rows.map(row => row.high);
+      const lows = rows.map(row => row.low);
+      const high = Math.max(...highs);
+      const low = Math.min(...lows);
+      if (!Number.isFinite(high) || high <= 0) return 0;
+      return (high - low) / high;
+    }
+
+    function splitChunks(rows, count) {
+      const chunkSize = Math.max(1, Math.floor(rows.length / count));
+      const chunks = [];
+      for (let index = 0; index < count; index += 1) {
+        const start = index * chunkSize;
+        const end = index === count - 1 ? rows.length : (index + 1) * chunkSize;
+        chunks.push(rows.slice(start, end));
+      }
+      return chunks;
+    }
+
+    function baseSeries(rows) {
+      return {
+        close: rows.map(row => row.close),
+        high: rows.map(row => row.high),
+        low: rows.map(row => row.low),
+        volume: rows.map(row => row.volume)
+      };
+    }
+
+    function resultShell(rows, strategy) {
+      return {
+        strategy,
+        strategyName: STRATEGY_NAMES[strategy],
+        signal: "HOLD",
+        checks: [],
+        metrics: [],
+        summary: "",
+        rows
+      };
+    }
+
+    function check(label, pass, detail = "") {
+      return { label, pass: Boolean(pass), detail };
+    }
+
+    function metric(label, value) {
+      return { label, value };
+    }
+
+    function calcDefault(rows) {
+      const result = resultShell(rows, "default");
+      if (rows.length < 60) {
+        result.summary = "至少需要 60 根資料";
+        return result;
+      }
+      const { close } = baseSeries(rows);
+      const ma20 = sma(close, 20);
+      const ma60 = sma(close, 60);
+      const rsiLine = rsi(close);
+      const { macdLine, signalLine } = macd(close);
+      const last = close.length - 1;
+      const bias = (close[last] - ma60[last]) / ma60[last] * 100;
+      const buy = ma20[last] > ma60[last] && rsiLine[last] > 55 && macdLine[last] > signalLine[last] && bias < 10;
+      const sell = ma20[last] < ma60[last] && rsiLine[last] < 45 && macdLine[last] < signalLine[last] && bias > -10;
+      result.signal = sell ? "SELL" : buy ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤", round(close[last])),
+        metric("MA20 / MA60", `${round(ma20[last])} / ${round(ma60[last])}`),
+        metric("RSI / BIAS", `${round(rsiLine[last])} / ${round(bias)}%`)
+      ];
+      result.checks = [
+        check("MA20 > MA60", ma20[last] > ma60[last], "多頭趨勢"),
+        check("RSI > 55", rsiLine[last] > 55, "動能轉強"),
+        check("MACD > Signal", macdLine[last] > signalLine[last], "指標金叉"),
+        check("BIAS < 10%", bias < 10, "避免追高")
+      ];
+      result.summary = `${STRATEGY_NAMES.default}：${result.signal}`;
+      return result;
+    }
+
+    function calcCross(rows) {
+      const result = resultShell(rows, "cross");
+      if (rows.length < 20) {
+        result.summary = "至少需要 20 根資料";
+        return result;
+      }
+      const { close } = baseSeries(rows);
+      const last = close.length - 1;
+      const ma5 = sma(close, 5)[last];
+      const ma10 = sma(close, 10)[last];
+      const ma20 = sma(close, 20)[last];
+      const price = close[last];
+      const buy = ma5 > ma10 && ma10 > ma20 && price < ma5 && price < ma10 && price < ma20;
+      const sell = ma5 < ma10 && ma10 < ma20 && price > ma5 && price > ma10 && price > ma20;
+      result.signal = sell ? "SELL" : buy ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤", round(price)),
+        metric("MA5 / MA10", `${round(ma5)} / ${round(ma10)}`),
+        metric("MA20", round(ma20))
+      ];
+      result.checks = [
+        check("MA5 > MA10 > MA20", ma5 > ma10 && ma10 > ma20, "黃金交叉候選"),
+        check("Close < MA5/10/20", price < ma5 && price < ma10 && price < ma20, "低檔觀察買點"),
+        check("MA5 < MA10 < MA20", ma5 < ma10 && ma10 < ma20, "死亡交叉候選"),
+        check("Close > MA5/10/20", price > ma5 && price > ma10 && price > ma20, "高檔觀察賣點")
+      ];
+      result.summary = `${STRATEGY_NAMES.cross}：${result.signal}`;
+      return result;
+    }
+
+    function calcShort(rows) {
+      const result = resultShell(rows, "short");
+      if (rows.length < 26) {
+        result.summary = "至少需要 26 根資料";
+        return result;
+      }
+      const { close } = baseSeries(rows);
+      const last = close.length - 1;
+      const ema5 = ema(close, 5)[last];
+      const ema10 = ema(close, 10)[last];
+      const ema20 = ema(close, 20)[last];
+      const { macdLine, signalLine } = macd(close);
+      const rsiNow = rsi(close)[last];
+      const price = close[last];
+      const buy = price > ema5 && ema5 > ema10 && ema10 > ema20 && macdLine[last] > signalLine[last] && rsiNow < 70;
+      const sell = price < ema5 && ema5 < ema10 && ema10 < ema20 || macdLine[last] < signalLine[last] || rsiNow > 70;
+      result.signal = sell ? "SELL" : buy ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤", round(price)),
+        metric("EMA5/10/20", `${round(ema5)} / ${round(ema10)} / ${round(ema20)}`),
+        metric("RSI", round(rsiNow))
+      ];
+      result.checks = [
+        check("Close > EMA5 > EMA10 > EMA20", price > ema5 && ema5 > ema10 && ema10 > ema20, "短線順勢"),
+        check("MACD > Signal", macdLine[last] > signalLine[last], "動能確認"),
+        check("RSI < 70", rsiNow < 70, "未進入過熱區"),
+        check("停損 0.5%~1%", true, "短線風控核心")
+      ];
+      result.summary = `${STRATEGY_NAMES.short}：${result.signal}`;
+      return result;
+    }
+
+    function calcLong(rows) {
+      const result = resultShell(rows, "long");
+      if (rows.length < 200) {
+        result.summary = "至少需要 200 根資料";
+        return result;
+      }
+      const { close } = baseSeries(rows);
+      const last = close.length - 1;
+      const sma50 = sma(close, 50)[last];
+      const sma100 = sma(close, 100)[last];
+      const sma200 = sma(close, 200)[last];
+      const { macdLine, signalLine } = macd(close, 26, 52, 9);
+      const price = close[last];
+      const buy = price > sma200 && sma50 > sma100 && sma100 > sma200 && macdLine[last] > signalLine[last];
+      const sell = price < sma50 || macdLine[last] < signalLine[last];
+      result.signal = sell ? "SELL" : buy ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤", round(price)),
+        metric("SMA50/100/200", `${round(sma50)} / ${round(sma100)} / ${round(sma200)}`),
+        metric("MACD", round(macdLine[last], 3))
+      ];
+      result.checks = [
+        check("Close > SMA200", price > sma200, "長期趨勢向上"),
+        check("SMA50 > SMA100 > SMA200", sma50 > sma100 && sma100 > sma200, "長線多頭排列"),
+        check("MACD > Signal", macdLine[last] > signalLine[last], "長週期動能"),
+        check("Close >= SMA50", price >= sma50, "跌破則降風險")
+      ];
+      result.summary = `${STRATEGY_NAMES.long}：${result.signal}`;
+      return result;
+    }
+
+    function calcRule35(rows) {
+      const result = resultShell(rows, "rule35");
+      if (rows.length < 35) {
+        result.summary = "至少需要 35 根資料";
+        return result;
+      }
+      const { close, high, volume } = baseSeries(rows);
+      const last = close.length - 1;
+      const ema3 = ema(close, 3);
+      const ema5 = ema(close, 5);
+      const ema10 = ema(close, 10);
+      const ema20 = ema(close, 20);
+      const ma35 = sma(close, 35);
+      const rsiNow = rsi(close)[last];
+      const price = close[last];
+      const avgVolume20 = avg(volume.slice(Math.max(0, last - 20), last));
+      const prevHigh35 = rollingMax(high, 35, 1);
+      const swingHigh20 = rollingMax(high, 20, 1);
+      const bias20 = (price - ema20[last]) / ema20[last] * 100;
+      const crossUp = ema3[last - 1] <= ema5[last - 1] && ema3[last] > ema5[last];
+      const crossDown = ema3[last - 1] >= ema5[last - 1] && ema3[last] < ema5[last];
+      const volumeConfirmed = avgVolume20 > 0 && volume[last] >= avgVolume20 * 1.5;
+      const trendConfirmed = price > ema20[last] && price > ma35[last];
+      const notOverextended = bias20 <= 8;
+      const breakoutBuy = price > prevHigh35 && volumeConfirmed && notOverextended;
+      const emaCrossBuy = crossUp && trendConfirmed && notOverextended;
+      const drawdown = swingHigh20 > 0 ? (swingHigh20 - price) / swingHigh20 : 0;
+      const supportDistance = Math.min(
+        Math.abs(price - ema5[last]) / ema5[last],
+        Math.abs(price - ema10[last]) / ema10[last]
+      );
+      const retracementBuy = ema3[last] > ema5[last] && ema5[last] > ema20[last] &&
+        drawdown >= 0.03 && drawdown <= 0.05 &&
+        supportDistance <= 0.015 &&
+        (avgVolume20 === 0 || volume[last] < avgVolume20);
+      const overboughtExit = rsiNow > 70 && (crossDown || price < close[last - 1]);
+      const highBiasExit = bias20 >= 12 && price < close[last - 1];
+      const sell = crossDown || overboughtExit || highBiasExit;
+      const buy = emaCrossBuy || breakoutBuy || retracementBuy;
+      result.signal = sell ? "SELL" : buy ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤", round(price)),
+        metric("回檔 / BIAS20", `${pct(drawdown)} / ${round(bias20)}%`),
+        metric("EMA3/5", `${round(ema3[last])} / ${round(ema5[last])}`)
+      ];
+      result.checks = [
+        check("EMA3 上穿 EMA5", crossUp, "3/5 EMA 金叉"),
+        check("突破 35 日高點且帶量", breakoutBuy, `35日高點 ${round(prevHigh35)}，量比 ${avgVolume20 ? round(volume[last] / avgVolume20, 2) : "-"}`),
+        check("回檔 3%~5% 且靠近 EMA 支撐", retracementBuy, `回檔 ${pct(drawdown)}，支撐距離 ${pct(supportDistance)}`),
+        check("BIAS20 <= 8%", notOverextended, `目前 ${round(bias20)}%`),
+        check("EMA3 未跌破 EMA5", !crossDown, "死叉為賣出警告"),
+        check("RSI 未超買轉弱", !overboughtExit, `RSI ${round(rsiNow)}`)
+      ];
+      result.summary = `${STRATEGY_NAMES.rule35}：${result.signal}`;
+      return result;
+    }
+
+    function calcVcp(rows) {
+      const result = resultShell(rows, "vcp");
+      if (rows.length < 60) {
+        result.summary = "至少需要 60 根資料";
+        return result;
+      }
+      const { close, high, low, volume } = baseSeries(rows);
+      const last = close.length - 1;
+      const price = close[last];
+      const avgVolume20 = avg(volume.slice(Math.max(0, last - 20), last));
+      const sma50Line = sma(close, 50);
+      const sma200Line = sma(close, 200);
+      const ema10Line = ema(close, 10);
+      const ema20Line = ema(close, 20);
+      const rsiNow = rsi(close)[last];
+      const trendConfirmed = rows.length >= 200
+        ? price > sma50Line[last] && price > sma200Line[last]
+        : price > sma50Line[last];
+      const contractionWindow = rows.slice(-48);
+      const chunks = splitChunks(contractionWindow, 4);
+      const ranges = chunks.filter(chunk => chunk.length).map(rangePct);
+      const decreasingCount = ranges.reduce((count, value, index) => {
+        if (index === ranges.length - 1) return count;
+        return count + (value >= ranges[index + 1] * 0.8 ? 1 : 0);
+      }, 0);
+      const contractions = ranges.length >= 3 && decreasingCount >= 2 && ranges[ranges.length - 1] <= 0.08;
+      const pivotHigh = rollingMax(high, 10, 1);
+      const pivotLow = rollingMin(low, 10, 1);
+      const last5 = rows.slice(-5);
+      const pivotRange = rangePct(last5);
+      const volumeDry = avgVolume20 === 0 || avg(last5.map(row => row.volume)) <= avgVolume20 * 0.5;
+      const volumeBreakout = avgVolume20 > 0 && volume[last] >= avgVolume20 * 1.5;
+      const pivotBreakout = trendConfirmed && contractions && price > pivotHigh && volumeBreakout;
+      const cheatEntry = trendConfirmed && contractions && pivotRange <= 0.05 && volumeDry && price >= pivotLow;
+      const trendExit = price < ema10Line[last] || price < ema20Line[last] || price < sma50Line[last];
+      const pivotStop = price < pivotLow;
+      const overboughtExit = rsiNow > 70 && price < close[last - 1];
+      result.signal = pivotStop || trendExit || overboughtExit ? "SELL" : pivotBreakout || cheatEntry ? "BUY" : "HOLD";
+      result.metrics = [
+        metric("收盤 / Pivot", `${round(price)} / ${round(pivotHigh)}`),
+        metric("收縮幅度", ranges.map(value => pct(value, 1)).join(" → ")),
+        metric("量比 / RSI", `${avgVolume20 ? round(volume[last] / avgVolume20, 2) : "-"} / ${round(rsiNow)}`)
+      ];
+      result.checks = [
+        check("站上 SMA50 / SMA200", trendConfirmed, rows.length >= 200 ? "長線趨勢確認" : "資料不足 200 根時以 SMA50 判斷"),
+        check("收縮幅度遞減", contractions, ranges.map(value => pct(value, 1)).join(" → ")),
+        check("Pivot 突破且量能 >= 1.5x", pivotBreakout, `Pivot ${round(pivotHigh)}，量比 ${avgVolume20 ? round(volume[last] / avgVolume20, 2) : "-"}`),
+        check("Cheat Entry 低量窄幅", cheatEntry, `5日區間 ${pct(pivotRange)}，低量 ${volumeDry ? "是" : "否"}`),
+        check("未跌破 Pivot Low", !pivotStop, `Pivot Low ${round(pivotLow)}`),
+        check("未跌破 EMA10/EMA20/SMA50", !trendExit, `${round(ema10Line[last])} / ${round(ema20Line[last])} / ${round(sma50Line[last])}`)
+      ];
+      result.summary = `${STRATEGY_NAMES.vcp}：${result.signal}`;
+      return result;
+    }
+
+    function analyzeRows(rows, strategy) {
+      const calculators = {
+        default: calcDefault,
+        cross: calcCross,
+        short: calcShort,
+        long: calcLong,
+        rule35: calcRule35,
+        vcp: calcVcp
+      };
+      return calculators[strategy](rows);
+    }
+
+    function renderResult(result) {
+      latestResult = result;
+      $("#activeStrategyText").textContent = result.strategy;
+      $("#dataCountText").textContent = String(result.rows.length);
+      const card = $("#signalCard");
+      card.classList.remove("buy", "sell", "hold");
+      card.classList.add(result.signal.toLowerCase());
+      $("#signalWord").textContent = result.signal;
+      $("#signalMeta").textContent = result.summary;
+
+      $("#metricGrid").innerHTML = result.metrics.map(item => `
+        <div class="metric">
+          <span>${item.label}</span>
+          <strong>${item.value}</strong>
+        </div>
+      `).join("");
+
+      $("#checklist").innerHTML = result.checks.map(item => `
+        <div class="check ${item.pass ? "pass" : "fail"}">
+          <b>${item.pass ? "✓" : "!"}</b>
+          <div><strong>${item.label}</strong>${item.detail ? `<br>${item.detail}` : ""}</div>
+        </div>
+      `).join("");
+    }
+
+    function runAnalysis() {
+      latestRows = parseCSV($("#csvInput").value);
+      if (!latestRows.length) {
+        addLog("沒有可分析的 CSV 資料", "bad");
+        renderResult({ ...resultShell([], activeStrategy), summary: "沒有資料", metrics: [], checks: [] });
+        return;
+      }
+      const result = analyzeRows(latestRows, activeStrategy);
+      renderResult(result);
+      addLog(`${result.strategy} 訊號：${result.signal}`, result.signal === "SELL" ? "bad" : result.signal === "BUY" ? "ok" : "");
+    }
+
+    async function sendTelegram(message) {
+      const token = $("#tgToken").value.trim();
+      const chatId = $("#tgChatId").value.trim();
+      if (!token || !chatId) {
+        addLog("Telegram Token 或 Chat ID 未設定", "bad");
+        return false;
+      }
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${encodeURIComponent(token)}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: message })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.description || `HTTP ${response.status}`);
+        }
+        addLog("Telegram 訊息已送出", "ok");
+        return true;
+      } catch (error) {
+        addLog(`Telegram 發送失敗：${error.message}`, "bad");
+        return false;
+      }
+    }
+
+    function formatSignalMessage() {
+      if (!latestResult) return "尚未產生策略訊號";
+      const latest = latestRows[latestRows.length - 1];
+      const metrics = latestResult.metrics.map(item => `${item.label}: ${item.value}`).join("\n");
+      const passed = latestResult.checks.filter(item => item.pass).length;
+      return [
+        "Quant System 策略訊號",
+        `策略: ${latestResult.strategy} - ${latestResult.strategyName}`,
+        `訊號: ${latestResult.signal}`,
+        `資料: ${latestRows.length} 根${latest ? `，最後日期 ${latest.date}` : ""}`,
+        metrics,
+        `條件: ${passed}/${latestResult.checks.length} 通過`
+      ].filter(Boolean).join("\n");
+    }
+
+    function buildCommand() {
+      const type = $("#commandType").value;
+      const symbol = $("#commandSymbol").value.trim().toUpperCase() || "2330";
+      const value = $("#commandValue").value.trim();
+      const strategy = $("#commandStrategy").value;
+      const mode = $("#commandMode").value;
+      const swan = $("#commandSwan").value;
+      const qty = $("#positionQty").value.trim() || "100";
+      const avgPrice = $("#positionAvg").value.trim() || "500";
+      if (["/list", "/positions", "/status", "/runonce", "/help"].includes(type)) return type;
+      if (["/add", "/remove"].includes(type)) return `${type} ${symbol}`;
+      if (type === "/strategy") return `${type} ${strategy}`;
+      if (type === "/mode") return `${type} ${mode}`;
+      if (type === "/blackswan") return `${type} ${swan}`;
+      if (type === "/setposition") return `${type} ${symbol} ${qty} ${avgPrice}`;
+      return `${type} ${value || defaultCommandValue(type)}`;
+    }
+
+    function defaultCommandValue(type) {
+      return {
+        "/balance": "500000",
+        "/stoploss": "1%",
+        "/takeprofit": "35",
+        "/maxorder": "1000"
+      }[type] || "";
+    }
+
+    function updateCommandFields() {
+      const type = $("#commandType").value;
+      const needsSymbol = ["/add", "/remove", "/setposition"].includes(type);
+      const needsValue = ["/balance", "/stoploss", "/takeprofit", "/maxorder"].includes(type);
+      $("[data-command-field='symbol']").classList.toggle("hide", !needsSymbol);
+      $("[data-command-field='value']").classList.toggle("hide", !needsValue);
+      $("[data-command-field='strategy']").classList.toggle("hide", type !== "/strategy");
+      $("[data-command-field='mode']").classList.toggle("hide", type !== "/mode");
+      $("[data-command-field='swan']").classList.toggle("hide", type !== "/blackswan");
+      $("[data-command-field='position']").classList.toggle("hide", type !== "/setposition");
+      $("#commandPreview").textContent = buildCommand();
+    }
+
+    function loadSample() {
+      const rows = [];
+      let price = 100;
+      const startDate = new Date(Date.UTC(2026, 2, 1));
+      for (let index = 1; index <= 90; index += 1) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + index - 1);
+        let drift = index < 35 ? 1.1 : index < 55 ? -0.15 : index < 72 ? 0.28 : 0.65;
+        let wave = Math.sin(index / 3) * (index < 40 ? 2.8 : index < 65 ? 1.6 : .65);
+        price = Math.max(20, price + drift + wave * .18);
+        const range = index < 40 ? 5.5 : index < 60 ? 3.2 : index < 78 ? 1.6 : .9;
+        const open = price - Math.sin(index) * .8;
+        const high = price + range / 2;
+        const low = price - range / 2;
+        const volume = index > 84 ? 6800 + index * 80 : index > 70 ? 1700 : 3000 + Math.round(Math.cos(index / 4) * 700);
+        rows.push({
+          date: date.toISOString().slice(0, 10),
+          open,
+          high,
+          low,
+          close: price,
+          volume
+        });
+      }
+      $("#csvInput").value = [
+        "date,open,high,low,close,volume",
+        ...rows.map(row => `${row.date},${round(row.open)},${round(row.high)},${round(row.low)},${round(row.close)},${Math.round(row.volume)}`)
+      ].join("\n");
+      addLog("已載入 VCP 範例資料", "ok");
+      runAnalysis();
+    }
+
+    function renderDayChecklist() {
+      const mode = $("#dayMode").value;
+      const risk = Number($("#riskPct").value);
+      const reward = Number($("#rewardRatio").value);
+      const rules = {
+        breakout: ["前 5~15 分鐘高低點已定義", "突破高點有量", "跌破區間低點立即停損", "不追離高點過遠"],
+        pullback: ["趨勢向上", "回踩 5MA 或 VWAP 不破", "量縮後再轉強", "停損放在支撐下方"],
+        reversal: ["急拉後爆量", "長上影或黑 K", "等待反轉 K 確認", "不在第一根急拉追價"],
+        range: ["盤整區間清楚", "支撐買壓力賣", "快進快出", "突破區間即停止逆勢"],
+        theme: ["成交量排行靠前", "資金流入同族群", "題材仍有延續", "不看基本面硬凹單"]
+      };
+      const riskOk = Number.isFinite(risk) && risk > 0 && risk <= 1;
+      const rewardOk = Number.isFinite(reward) && reward >= 2;
+      $("#dayChecklist").innerHTML = [
+        ...rules[mode].map(item => check(item, true)),
+        check("單筆風險 <= 1%", riskOk, `${Number.isFinite(risk) ? risk : "-"}%`),
+        check("盈虧比 >= 1:2", rewardOk, `1:${Number.isFinite(reward) ? reward : "-"}`)
+      ].map(item => `
+        <div class="check ${item.pass ? "pass" : "fail"}">
+          <b>${item.pass ? "✓" : "!"}</b>
+          <div><strong>${item.label}</strong>${item.detail ? `<br>${item.detail}` : ""}</div>
+        </div>
+      `).join("");
+    }
+
+    function loadState() {
+      try {
+        importedState = JSON.parse($("#stateInput").value);
+        const strategy = importedState.strategy_mode;
+        if (strategy && STRATEGY_NAMES[strategy]) {
+          setStrategy(strategy);
+        }
+        const stocks = importedState.stock_list || [];
+        if (stocks[0]) $("#commandSymbol").value = stocks[0];
+        addLog(`狀態已套用：${stocks.length || 0} 檔，策略 ${strategy || "-"}`, "ok");
+        updateCommandFields();
+      } catch (error) {
+        addLog(`狀態 JSON 格式錯誤：${error.message}`, "bad");
+      }
+    }
+
+    function formatStatusMessage() {
+      if (!importedState) return "尚未匯入 trading_state.json";
+      const executor = importedState.executor || {};
+      const positions = executor.positions || {};
+      const avgPrices = executor.avg_prices || {};
+      const stockList = importedState.stock_list || [];
+      const positionText = Object.keys(positions).length
+        ? Object.keys(positions).map(symbol => `${symbol}: ${positions[symbol]}股 @ ${avgPrices[symbol] || "-"}`).join("\n")
+        : "無持倉";
+      return [
+        "Quant System 交易狀態",
+        `策略: ${importedState.strategy_mode || "-"}`,
+        `交易清單: ${stockList.length ? stockList.join(", ") : "空"}`,
+        `可用資金: ${executor.balance ?? "-"}`,
+        `最大下單量: ${executor.max_order ?? "-"}`,
+        `停損: ${executor.stop_loss_pct !== undefined ? pct(executor.stop_loss_pct) : "-"}`,
+        `停利: ${executor.take_profit_pct !== undefined ? pct(executor.take_profit_pct) : "-"}`,
+        `黑天鵝: ${executor.black_swan ? "ON" : "OFF"}`,
+        positionText
+      ].join("\n");
+    }
+
+    function setStrategy(strategy) {
+      activeStrategy = strategy;
+      $$(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.strategy === strategy));
+      $("#activeStrategyText").textContent = strategy;
+    }
+
+    function init() {
+      const settings = getSettings();
+      $("#tgToken").value = settings.token || "";
+      $("#tgChatId").value = settings.chatId || "";
+      updateTgState();
+      renderDayChecklist();
+      updateCommandFields();
+      loadSample();
+
+      $("#saveTgBtn").addEventListener("click", () => {
+        saveSettings({ token: $("#tgToken").value.trim(), chatId: $("#tgChatId").value.trim() });
+        addLog("Telegram 設定已保存", "ok");
+      });
+      $("#testTgBtn").addEventListener("click", () => sendTelegram("Quant System TG 測試訊息"));
+      $("#tgToken").addEventListener("input", updateTgState);
+      $("#tgChatId").addEventListener("input", updateTgState);
+      $("#analyzeBtn").addEventListener("click", runAnalysis);
+      $("#loadSampleBtn").addEventListener("click", loadSample);
+      $("#sendSignalBtn").addEventListener("click", () => sendTelegram(formatSignalMessage()));
+      $("#clearLogBtn").addEventListener("click", () => { $("#eventLog").innerHTML = ""; });
+
+      $$(".tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          setStrategy(tab.dataset.strategy);
+          runAnalysis();
+        });
+      });
+
+      ["commandType", "commandSymbol", "commandValue", "commandStrategy", "commandMode", "commandSwan", "positionQty", "positionAvg"].forEach(id => {
+        $(`#${id}`).addEventListener("input", updateCommandFields);
+        $(`#${id}`).addEventListener("change", updateCommandFields);
+      });
+
+      $("#copyCommandBtn").addEventListener("click", async () => {
+        const command = buildCommand();
+        try {
+          await navigator.clipboard.writeText(command);
+          addLog(`已複製 ${command}`, "ok");
+        } catch {
+          addLog("複製失敗，請手動選取指令", "bad");
+        }
+      });
+
+      $("#shareCommandBtn").addEventListener("click", () => {
+        const command = encodeURIComponent(buildCommand());
+        window.open(`https://t.me/share/url?url=&text=${command}`, "_blank", "noopener,noreferrer");
+      });
+
+      $("#sendCommandBtn").addEventListener("click", () => sendTelegram(buildCommand()));
+      $("#dayMode").addEventListener("change", renderDayChecklist);
+      $("#riskPct").addEventListener("input", renderDayChecklist);
+      $("#rewardRatio").addEventListener("input", renderDayChecklist);
+      $("#loadStateBtn").addEventListener("click", loadState);
+      $("#sendStatusBtn").addEventListener("click", () => sendTelegram(formatStatusMessage()));
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      init();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

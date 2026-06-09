@@ -1,0 +1,2 @@
+timestamp,symbol,signal,action,qty,price,strategy,order_mode,exit_reason,stop_loss,take_profit
+2026-06-07T13:36:12.103662+00:00,2330,BUY,BUY,100,521.9,default,paper,,False,False
