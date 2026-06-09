@@ -657,6 +657,31 @@
       overflow-wrap: anywhere;
     }
 
+    .remote-qr {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .remote-qr img {
+      width: 148px;
+      height: 148px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .remote-qr span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     .platform-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -818,6 +843,10 @@
       <section class="section">
         <h2>遠端連線</h2>
         <div class="remote-url" id="remoteUrlText">尚未取得遠端網址</div>
+        <div class="remote-qr" id="remoteQrBox">
+          <img id="remoteQrImage" alt="遠端連線 QR Code">
+          <span>手機掃碼開啟遠端控制台</span>
+        </div>
         <div class="row" style="margin-top:8px;">
           <button class="btn secondary" id="copyRemoteBtn" type="button" title="複製遠端網址">
             <i data-lucide="copy"></i><span>複製</span>
@@ -1162,15 +1191,21 @@
       const remoteUrl = getRemoteUrl();
       const remoteText = $("#remoteUrlText");
       const remoteState = $("#remoteStateText");
+      const qrBox = $("#remoteQrBox");
+      const qrImage = $("#remoteQrImage");
       if (!remoteUrl) {
         remoteText.textContent = "目前為本機檔案模式；部署到 Netlify 後會產生手機、電腦、網頁皆可開啟的遠端網址。";
         remoteState.textContent = "本機模式";
         remoteState.style.color = "var(--amber)";
+        qrBox.classList.add("hide");
+        qrImage.removeAttribute("src");
         return;
       }
       remoteText.textContent = remoteUrl;
       remoteState.textContent = "可連線";
       remoteState.style.color = "var(--green)";
+      qrBox.classList.remove("hide");
+      qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(remoteUrl)}`;
     }
 
     async function testRemoteConnection() {
