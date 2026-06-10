@@ -55,7 +55,7 @@
 
     .app {
       display: grid;
-      grid-template-columns: 304px minmax(0, 1fr);
+      grid-template-columns: 288px minmax(0, 1fr);
       min-height: 100vh;
       width: 100%;
       max-width: 100vw;
@@ -117,6 +117,103 @@
       font-size: 14px;
       font-weight: 900;
       letter-spacing: 0;
+    }
+
+    .collapsible {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .collapsible summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 14px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 900;
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .collapsible summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .collapsible summary svg {
+      width: 17px;
+      height: 17px;
+      color: var(--muted);
+      transition: transform .18s;
+    }
+
+    .collapsible[open] summary svg {
+      transform: rotate(180deg);
+    }
+
+    .collapsible-body {
+      padding: 0 14px 14px;
+    }
+
+    .quick-start {
+      background: #102433;
+      color: #fff;
+      border-color: #102433;
+    }
+
+    .quick-start h2,
+    .quick-start strong {
+      color: #fff;
+    }
+
+    .quick-start .footer-note {
+      color: rgba(255,255,255,.72);
+      margin-top: 10px;
+    }
+
+    .step-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .step-list li {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      line-height: 1.35;
+      font-size: 12px;
+    }
+
+    .step-list b {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .step-list span {
+      color: rgba(255,255,255,.74);
+    }
+
+    .quick-start .btn {
+      background: #fff;
+      color: #102433;
+    }
+
+    .quick-start .btn.secondary {
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      border-color: rgba(255,255,255,.22);
     }
 
     .field {
@@ -279,6 +376,114 @@
 
     .pill strong {
       color: var(--ink);
+    }
+
+    .command-center {
+      display: grid;
+      grid-template-columns: 1.35fr .9fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .control-strip,
+    .device-strip {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .control-strip {
+      display: grid;
+      gap: 12px;
+    }
+
+    .action-path {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .action-step {
+      min-height: 72px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .action-step b {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      margin-bottom: 6px;
+      border-radius: 999px;
+      background: #102433;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .action-step strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .action-step span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .primary-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .device-strip {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .device-row {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 48px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+    }
+
+    .device-row svg {
+      width: 19px;
+      height: 19px;
+      color: var(--blue);
+    }
+
+    .device-row strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .device-row span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .state-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
     }
 
     .grid {
@@ -779,11 +984,17 @@
 
       .sidebar {
         position: static;
+        order: 2;
         height: auto;
         border-right: 0;
         border-bottom: 1px solid var(--line);
       }
 
+      .workspace {
+        order: 1;
+      }
+
+      .command-center,
       .grid,
       .signal-board {
         grid-template-columns: 1fr;
@@ -818,6 +1029,8 @@
       }
 
       .tabs,
+      .action-path,
+      .primary-actions,
       .metric-grid,
       .strategy-grid,
       .image-strip,
@@ -864,8 +1077,27 @@
         </div>
       </div>
 
-      <section class="section">
-        <h2>Telegram 連線</h2>
+      <section class="section quick-start">
+        <h2>快速開始</h2>
+        <ol class="step-list">
+          <li><b>1</b><span><strong>載入行情</strong>貼上 CSV 或使用範例資料</span></li>
+          <li><b>2</b><span><strong>選擇策略</strong>VCP、35法則、短線、長線</span></li>
+          <li><b>3</b><span><strong>分析訊號</strong>查看買賣、風險與下一步</span></li>
+          <li><b>4</b><span><strong>同步團隊</strong>TG 推播或多人房間共享</span></li>
+        </ol>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="quickRunBtn" type="button" title="載入範例並分析">
+            <i data-lucide="play"></i><span>快速分析</span>
+          </button>
+          <button class="btn secondary" id="openCollabBtn" type="button" title="開啟多人連線工具">
+            <i data-lucide="users"></i><span>多人</span>
+          </button>
+        </div>
+      </section>
+
+      <details class="section collapsible" id="tgTools">
+        <summary><span>Telegram 連線</span><i data-lucide="chevron-down"></i></summary>
+        <div class="collapsible-body">
         <div class="field">
           <label for="tgToken">Bot Token</label>
           <div class="input-action">
@@ -894,10 +1126,12 @@
           <strong>安全提示</strong>
           Token 只保存在這台瀏覽器；請不要把 `.env` 或 `.env.txt` 推上 GitHub。
         </div>
-      </section>
+        </div>
+      </details>
 
-      <section class="section">
-        <h2>遠端連線</h2>
+      <details class="section collapsible" id="remoteTools">
+        <summary><span>遠端連線</span><i data-lucide="chevron-down"></i></summary>
+        <div class="collapsible-body">
         <div class="remote-url" id="remoteUrlText">尚未取得遠端網址</div>
         <div class="remote-qr" id="remoteQrBox">
           <img id="remoteQrImage" alt="遠端連線 QR Code">
@@ -919,10 +1153,12 @@
           <div class="platform"><strong>電腦</strong>桌機/筆電遠端操作</div>
           <div class="platform"><strong>網頁</strong>雲端 API 動態分析</div>
         </div>
-      </section>
+        </div>
+      </details>
 
-      <section class="section">
-        <h2>多人連線</h2>
+      <details class="section collapsible" id="roomTools">
+        <summary><span>多人連線</span><i data-lucide="chevron-down"></i></summary>
+        <div class="collapsible-body">
         <div class="split-fields">
           <div class="field">
             <label for="roomName">名稱</label>
@@ -954,10 +1190,12 @@
         <div class="activity-list" id="roomActivity">
           <div class="activity-card">尚無同步訊號</div>
         </div>
-      </section>
+        </div>
+      </details>
 
-      <section class="section">
-        <h2>常用指令</h2>
+      <details class="section collapsible" id="commandTools">
+        <summary><span>常用指令</span><i data-lucide="chevron-down"></i></summary>
+        <div class="collapsible-body">
         <div class="command-box">
           <div class="field">
             <label for="commandType">指令</label>
@@ -1035,19 +1273,22 @@
             </button>
           </div>
         </div>
-      </section>
+        </div>
+      </details>
 
-      <section class="section">
-        <h2>操作紀錄</h2>
+      <details class="section collapsible" id="logTools">
+        <summary><span>操作紀錄</span><i data-lucide="chevron-down"></i></summary>
+        <div class="collapsible-body">
         <div class="log" id="eventLog"></div>
-      </section>
+        </div>
+      </details>
     </aside>
 
     <main class="workspace">
       <div class="topbar">
         <div>
-          <h2>交易策略控制台</h2>
-          <p>選擇策略、貼上行情資料，快速檢查訊號並推送到 Telegram。</p>
+          <h2>Quant System Pro</h2>
+          <p>訊號、風控、協作與自動化集中在同一個控制台。</p>
         </div>
         <div class="status-line">
           <span class="pill">策略 <strong id="activeStrategyText">vcp</strong></span>
@@ -1057,6 +1298,39 @@
           <span class="pill">TG <strong id="tgStateText">未設定</strong></span>
         </div>
       </div>
+
+      <section class="command-center">
+        <div class="control-strip">
+          <div class="action-path">
+            <div class="action-step"><b>1</b><strong>載入資料</strong><span>CSV / 範例</span></div>
+            <div class="action-step"><b>2</b><strong>選策略</strong><span>VCP / 35 / 短長線</span></div>
+            <div class="action-step"><b>3</b><strong>分析</strong><span>訊號與風險</span></div>
+            <div class="action-step"><b>4</b><strong>同步</strong><span>TG / 多人房</span></div>
+          </div>
+          <div class="primary-actions">
+            <button class="btn green" id="commandAnalyzeBtn" type="button" title="立即分析目前資料">
+              <i data-lucide="activity"></i><span>立即分析</span>
+            </button>
+            <button class="btn secondary" id="commandSampleBtn" type="button" title="載入範例資料">
+              <i data-lucide="file-input"></i><span>範例資料</span>
+            </button>
+            <button class="btn blue" id="commandRoomBtn" type="button" title="開啟多人房間">
+              <i data-lucide="users"></i><span>多人房間</span>
+            </button>
+          </div>
+        </div>
+        <div class="device-strip">
+          <div class="device-row">
+            <i data-lucide="smartphone"></i><div><strong>手機</strong><span>PWA / 分享連結</span></div><b class="state-dot"></b>
+          </div>
+          <div class="device-row">
+            <i data-lucide="monitor"></i><div><strong>電腦</strong><span>大螢幕控盤</span></div><b class="state-dot"></b>
+          </div>
+          <div class="device-row">
+            <i data-lucide="globe-2"></i><div><strong>網頁</strong><span>雲端 API / 多人同步</span></div><b class="state-dot"></b>
+          </div>
+        </div>
+      </section>
 
       <div class="grid">
         <section class="panel">
@@ -2262,6 +2536,25 @@
       $("#activeStrategyText").textContent = strategy;
     }
 
+    function openToolPanel(selector) {
+      const panel = $(selector);
+      if (!panel) return;
+      panel.open = true;
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    async function runQuickAnalysis() {
+      loadSample();
+      await runAnalysis();
+    }
+
+    function openCollaboration() {
+      openToolPanel("#roomTools");
+      if (!normalizeRoomCode($("#roomCode").value) && window.location.protocol !== "file:") {
+        createRoom();
+      }
+    }
+
     function init() {
       const settings = getSettings();
       const roomSettings = getRoomSettings();
@@ -2291,6 +2584,14 @@
         const chatId = $("#tgChatId").value.trim() || "你的TelegramChatId";
         copyText(`TELEGRAM_TOKEN=${token}\nTELEGRAM_CHAT_ID=${chatId}`, "已複製 Telegram .env 設定");
       });
+      $("#quickRunBtn").addEventListener("click", runQuickAnalysis);
+      $("#openCollabBtn").addEventListener("click", openCollaboration);
+      $("#commandAnalyzeBtn").addEventListener("click", runAnalysis);
+      $("#commandSampleBtn").addEventListener("click", () => {
+        loadSample();
+        addLog("已載入範例資料", "ok");
+      });
+      $("#commandRoomBtn").addEventListener("click", openCollaboration);
       $("#copyRemoteBtn").addEventListener("click", () => {
         const remoteUrl = getRemoteUrl();
         if (!remoteUrl) {
