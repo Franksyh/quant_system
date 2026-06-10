@@ -1,0 +1,10 @@
+.git/
+.netlify/
+quant_system/venv/
+quant_system/nenv/
+quant_system/__pycache__/
+quant_system/.env
+quant_system/.env.*
+quant_system/logs/
+*.log
+全方位股市分析師設計/

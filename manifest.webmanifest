@@ -1,7 +1,7 @@
 {
   "name": "Quant Trade Remote",
   "short_name": "Quant Trade",
-  "description": "手機、電腦與網頁版皆可使用的遠端策略訊號控制台。",
+  "description": "手機、電腦與網頁版皆可使用的多人遠端策略訊號控制台。",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

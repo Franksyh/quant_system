@@ -682,6 +682,61 @@
       font-weight: 800;
     }
 
+    .room-status {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .room-status span,
+    .member-chip,
+    .activity-card {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .room-status strong,
+    .member-chip strong,
+    .activity-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .member-list,
+    .activity-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .member-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .member-chip b {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .activity-card {
+      background: #fff;
+    }
+
     .platform-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -768,6 +823,7 @@
       .image-strip,
       .decision-strip,
       .platform-grid,
+      .room-status,
       .split-fields {
         grid-template-columns: 1fr;
       }
@@ -861,7 +917,42 @@
         <div class="platform-grid">
           <div class="platform"><strong>手機</strong>瀏覽器開啟或分享網址</div>
           <div class="platform"><strong>電腦</strong>桌機/筆電遠端操作</div>
-          <div class="platform"><strong>網頁</strong>Netlify API 動態分析</div>
+          <div class="platform"><strong>網頁</strong>雲端 API 動態分析</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>多人連線</h2>
+        <div class="split-fields">
+          <div class="field">
+            <label for="roomName">名稱</label>
+            <input id="roomName" type="text" autocomplete="nickname" placeholder="Frank">
+          </div>
+          <div class="field">
+            <label for="roomCode">房間碼</label>
+            <input id="roomCode" type="text" inputmode="latin" autocomplete="off" placeholder="QTRADE">
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn green" id="createRoomBtn" type="button" title="建立多人房間">
+            <i data-lucide="users"></i><span>建立</span>
+          </button>
+          <button class="btn blue" id="joinRoomBtn" type="button" title="加入多人房間">
+            <i data-lucide="log-in"></i><span>加入</span>
+          </button>
+          <button class="btn secondary" id="copyRoomBtn" type="button" title="複製房間邀請連結">
+            <i data-lucide="link"></i><span>邀請</span>
+          </button>
+        </div>
+        <div class="room-status">
+          <span>房間 <strong id="roomStateText">未加入</strong></span>
+          <span>線上 <strong id="roomUserCount">0</strong></span>
+        </div>
+        <div class="member-list" id="memberList">
+          <div class="activity-card">尚無線上用戶</div>
+        </div>
+        <div class="activity-list" id="roomActivity">
+          <div class="activity-card">尚無同步訊號</div>
         </div>
       </section>
 
@@ -1142,10 +1233,13 @@
     };
 
     const STORAGE_KEY = "quantSystemStrategyTg";
+    const ROOM_STORAGE_KEY = "quantSystemStrategyRoom";
     let activeStrategy = "vcp";
     let latestResult = null;
     let latestRows = [];
     let importedState = null;
+    let roomSession = null;
+    let roomTimer = null;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -1194,7 +1288,7 @@
       const qrBox = $("#remoteQrBox");
       const qrImage = $("#remoteQrImage");
       if (!remoteUrl) {
-        remoteText.textContent = "目前為本機檔案模式；部署到 Netlify 後會產生手機、電腦、網頁皆可開啟的遠端網址。";
+        remoteText.textContent = "目前為本機檔案模式；部署到雲端後會產生手機、電腦、網頁皆可開啟的遠端網址。";
         remoteState.textContent = "本機模式";
         remoteState.style.color = "var(--amber)";
         qrBox.classList.add("hide");
@@ -1212,7 +1306,7 @@
       if (window.location.protocol === "file:") {
         $("#remoteStateText").textContent = "本機模式";
         $("#remoteStateText").style.color = "var(--amber)";
-        addLog("目前是本機檔案模式；部署到 Netlify 後即可測試遠端 API", "bad");
+        addLog("目前是本機檔案模式；部署到雲端後即可測試遠端 API", "bad");
         return false;
       }
 
@@ -1232,6 +1326,198 @@
         $("#remoteStateText").style.color = "var(--red)";
         addLog(`遠端 API 測試失敗：${error.message}`, "bad");
         return false;
+      }
+    }
+
+    function getClientId() {
+      const key = `${ROOM_STORAGE_KEY}:client`;
+      let clientId = localStorage.getItem(key);
+      if (!clientId) {
+        clientId = `client-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(key, clientId);
+      }
+      return clientId;
+    }
+
+    function normalizeRoomCode(value) {
+      return String(value || "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 12);
+    }
+
+    function makeRoomCode() {
+      return `QT${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    }
+
+    function getRoomSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(ROOM_STORAGE_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function saveRoomSettings() {
+      localStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify({
+        name: $("#roomName").value.trim(),
+        room: normalizeRoomCode($("#roomCode").value)
+      }));
+    }
+
+    function getRoomUrl(room = roomSession?.room || normalizeRoomCode($("#roomCode").value)) {
+      const remoteUrl = getRemoteUrl();
+      if (!remoteUrl || !room) return "";
+      const url = new URL(remoteUrl);
+      url.searchParams.set("room", room);
+      return url.href;
+    }
+
+    function setRoomState(text, type = "") {
+      const state = $("#roomStateText");
+      state.textContent = text;
+      state.style.color = type === "ok" ? "var(--green)" : type === "bad" ? "var(--red)" : type === "warn" ? "var(--amber)" : "inherit";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function renderRoomSnapshot(snapshot) {
+      if (!snapshot || !snapshot.ok) return;
+      setRoomState(snapshot.room, "ok");
+      $("#roomUserCount").textContent = String(snapshot.userCount || 0);
+      $("#memberList").innerHTML = snapshot.users?.length
+        ? snapshot.users.map((user) => `
+          <div class="member-chip">
+            <strong>${escapeHtml(user.name)}</strong>
+            <b title="在線"></b>
+          </div>
+        `).join("")
+        : `<div class="activity-card">尚無線上用戶</div>`;
+
+      if (snapshot.latestSignal) {
+        const signal = snapshot.latestSignal;
+        $("#roomActivity").innerHTML = `
+          <div class="activity-card">
+            <strong>${escapeHtml(signal.signal || "HOLD")} · ${escapeHtml(signal.strategy || "-")}</strong>
+            ${escapeHtml(signal.summary || "已同步最新訊號")}<br>
+            ${escapeHtml(signal.user || "-")} · ${new Date(signal.at).toLocaleTimeString()}
+          </div>
+        `;
+      } else {
+        $("#roomActivity").innerHTML = `<div class="activity-card">尚無同步訊號</div>`;
+      }
+    }
+
+    async function callRoomApi(action, payload = {}) {
+      if (window.location.protocol === "file:") {
+        setRoomState("本機模式", "warn");
+        addLog("多人連線需要部署到雲端後使用", "bad");
+        return null;
+      }
+
+      const room = normalizeRoomCode(payload.room || roomSession?.room || $("#roomCode").value);
+      const name = ($("#roomName").value.trim() || "Guest").slice(0, 24);
+      if (!room) {
+        setRoomState("缺少房間碼", "bad");
+        addLog("請先建立或輸入房間碼", "bad");
+        return null;
+      }
+
+      const response = await fetch("/api/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          room,
+          name,
+          clientId: getClientId(),
+          ...payload
+        })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+      return data;
+    }
+
+    function startRoomPolling() {
+      clearInterval(roomTimer);
+      roomTimer = setInterval(refreshRoom, 5000);
+    }
+
+    async function refreshRoom() {
+      if (!roomSession?.room) return;
+      try {
+        const snapshot = await callRoomApi("heartbeat");
+        renderRoomSnapshot(snapshot);
+      } catch (error) {
+        setRoomState("連線中斷", "bad");
+        addLog(`多人房間同步失敗：${error.message}`, "bad");
+      }
+    }
+
+    async function joinRoom(roomCode = $("#roomCode").value, silent = false) {
+      const room = normalizeRoomCode(roomCode);
+      if (!room) {
+        addLog("請輸入房間碼", "bad");
+        return;
+      }
+      $("#roomCode").value = room;
+      saveRoomSettings();
+      roomSession = {
+        room,
+        name: $("#roomName").value.trim() || "Guest",
+        clientId: getClientId()
+      };
+      setRoomState("連線中", "warn");
+      try {
+        const snapshot = await callRoomApi("join", { room });
+        renderRoomSnapshot(snapshot);
+        startRoomPolling();
+        if (!silent) addLog(`已加入多人房間 ${room}`, "ok");
+      } catch (error) {
+        setRoomState("加入失敗", "bad");
+        addLog(`加入多人房間失敗：${error.message}`, "bad");
+      }
+    }
+
+    function createRoom() {
+      const room = makeRoomCode();
+      $("#roomCode").value = room;
+      joinRoom(room);
+    }
+
+    async function copyRoomInvite() {
+      const room = normalizeRoomCode($("#roomCode").value || roomSession?.room);
+      const url = getRoomUrl(room);
+      if (!url) {
+        addLog("部署後才會產生多人房間邀請連結", "bad");
+        return;
+      }
+      await copyText(url, "已複製多人房間邀請連結");
+    }
+
+    async function publishRoomSignal(result) {
+      if (!roomSession?.room || !result) return;
+      try {
+        const snapshot = await callRoomApi("publish", {
+          type: "signal",
+          signal: result.signal,
+          strategy: result.strategy,
+          summary: result.summary
+        });
+        renderRoomSnapshot(snapshot);
+      } catch (error) {
+        addLog(`多人房間訊號同步失敗：${error.message}`, "bad");
       }
     }
 
@@ -1786,6 +2072,7 @@
       const result = apiResult || analyzeRows(latestRows, activeStrategy);
       renderResult(result);
       addLog(`${result.strategy} 訊號：${result.signal}`, result.signal === "SELL" ? "bad" : result.signal === "BUY" ? "ok" : "");
+      publishRoomSignal(result);
     }
 
     async function sendTelegram(message) {
@@ -1971,8 +2258,12 @@
 
     function init() {
       const settings = getSettings();
+      const roomSettings = getRoomSettings();
+      const urlRoom = normalizeRoomCode(new URLSearchParams(window.location.search).get("room"));
       $("#tgToken").value = settings.token || "";
       $("#tgChatId").value = settings.chatId || "";
+      $("#roomName").value = roomSettings.name || "";
+      $("#roomCode").value = urlRoom || roomSettings.room || "";
       updateTgState();
       updateRemotePanel();
       renderDayChecklist();
@@ -2020,6 +2311,14 @@
         }
       });
       $("#testRemoteBtn").addEventListener("click", testRemoteConnection);
+      $("#createRoomBtn").addEventListener("click", createRoom);
+      $("#joinRoomBtn").addEventListener("click", () => joinRoom());
+      $("#copyRoomBtn").addEventListener("click", copyRoomInvite);
+      $("#roomName").addEventListener("input", saveRoomSettings);
+      $("#roomCode").addEventListener("input", () => {
+        $("#roomCode").value = normalizeRoomCode($("#roomCode").value);
+        saveRoomSettings();
+      });
       $("#tgToken").addEventListener("input", updateTgState);
       $("#tgChatId").addEventListener("input", updateTgState);
       $("#analyzeBtn").addEventListener("click", runAnalysis);
@@ -2055,6 +2354,10 @@
       $("#rewardRatio").addEventListener("input", renderDayChecklist);
       $("#loadStateBtn").addEventListener("click", loadState);
       $("#sendStatusBtn").addEventListener("click", () => sendTelegram(formatStatusMessage()));
+
+      if (urlRoom && window.location.protocol !== "file:") {
+        joinRoom(urlRoom, true);
+      }
     }
 
     window.addEventListener("DOMContentLoaded", () => {

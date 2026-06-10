@@ -1,0 +1,38 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/app",
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+    },
+    {
+      "source": "/remote",
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+    },
+    {
+      "source": "/room/:roomId",
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}

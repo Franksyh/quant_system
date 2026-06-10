@@ -1,4 +1,4 @@
-const CACHE_NAME = "quant-trade-static-v1";
+const CACHE_NAME = "quant-trade-static-v2";
 const STATIC_ASSETS = [
   "/",
   "/app",
