@@ -28,3 +28,5 @@ quant_system_strategy_tg_mobile_preview.png
 # OS files
 .DS_Store
 Thumbs.db
+
+.vercel

@@ -4,15 +4,15 @@
   "rewrites": [
     {
       "source": "/app",
-      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg"
     },
     {
       "source": "/remote",
-      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg"
     },
     {
       "source": "/room/:roomId",
-      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg.html"
+      "destination": "/quant_system功能&使用說明/quant_system_strategy_tg"
     }
   ],
   "headers": [

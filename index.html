@@ -54,10 +54,14 @@
   <main>
     <h1>Quant Trade</h1>
     <p>正在開啟交易策略控制台。</p>
-    <a href="quant_system功能&使用說明/quant_system_strategy_tg.html">進入控制台</a>
+    <a id="enterAppLink" href="quant_system功能&使用說明/quant_system_strategy_tg.html">進入控制台</a>
   </main>
   <script>
-    window.location.replace("quant_system功能&使用說明/quant_system_strategy_tg.html");
+    const target = window.location.protocol === "file:"
+      ? "quant_system功能&使用說明/quant_system_strategy_tg.html"
+      : "/app";
+    document.getElementById("enterAppLink").href = target;
+    window.location.replace(target);
   </script>
 </body>
 </html>
