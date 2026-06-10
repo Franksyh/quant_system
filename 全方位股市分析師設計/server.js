@@ -161,6 +161,9 @@ const ALIAS_SYMBOLS = new Map(
 );
 
 const cache = new Map();
+const rooms = new Map();
+const ROOM_TTL_MS = Number(process.env.ROOM_TTL_MS || 2 * 60 * 1000);
+const ROOM_MAX_USERS = Number(process.env.ROOM_MAX_USERS || 60);
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -246,6 +249,14 @@ export async function handleApiRequest(requestUrl) {
     return jsonResult({ ok: true, query, news });
   }
 
+  if (requestUrl.pathname === "/api/room") {
+    return syncRoom(requestUrl);
+  }
+
+  if (requestUrl.pathname === "/api/room/leave") {
+    return leaveRoom(requestUrl);
+  }
+
   if (requestUrl.pathname === "/api/health") {
     return jsonResult({ ok: true, now: new Date().toISOString() });
   }
@@ -255,6 +266,125 @@ export async function handleApiRequest(requestUrl) {
 
 function jsonResult(data, status = 200) {
   return { data, status };
+}
+
+function syncRoom(requestUrl) {
+  pruneRooms();
+
+  const now = Date.now();
+  const roomId = sanitizeRoom(requestUrl.searchParams.get("room")) || makeShortId("room");
+  const userId = sanitizeUserId(requestUrl.searchParams.get("user")) || makeShortId("user");
+  const name = sanitizeName(requestUrl.searchParams.get("name")) || `User ${userId.slice(-4).toUpperCase()}`;
+  const focus = sanitizeFocus(requestUrl.searchParams.get("focus"));
+
+  let room = rooms.get(roomId);
+  if (!room) {
+    room = {
+      id: roomId,
+      createdAt: now,
+      updatedAt: now,
+      focus: "",
+      users: new Map(),
+    };
+    rooms.set(roomId, room);
+  }
+
+  const existing = room.users.get(userId);
+  if (focus) room.focus = focus;
+  if (!existing && room.users.size >= ROOM_MAX_USERS) {
+    const oldest = [...room.users.values()].sort((a, b) => a.lastSeen - b.lastSeen)[0];
+    if (oldest) room.users.delete(oldest.id);
+  }
+
+  room.users.set(userId, {
+    id: userId,
+    name,
+    focus: focus || existing?.focus || room.focus || "",
+    joinedAt: existing?.joinedAt || new Date(now).toISOString(),
+    lastSeen: now,
+  });
+  room.updatedAt = now;
+
+  return jsonResult({ ok: true, userId, ...roomSnapshot(room) });
+}
+
+function leaveRoom(requestUrl) {
+  const roomId = sanitizeRoom(requestUrl.searchParams.get("room"));
+  const userId = sanitizeUserId(requestUrl.searchParams.get("user"));
+  const room = roomId ? rooms.get(roomId) : null;
+  if (room && userId) {
+    room.users.delete(userId);
+    room.updatedAt = Date.now();
+    if (!room.users.size) rooms.delete(roomId);
+  }
+  return jsonResult({ ok: true, room: roomId, userId });
+}
+
+function roomSnapshot(room) {
+  const now = Date.now();
+  const users = [...room.users.values()]
+    .filter((user) => now - user.lastSeen <= ROOM_TTL_MS)
+    .sort((a, b) => b.lastSeen - a.lastSeen)
+    .map((user) => ({
+      id: user.id,
+      name: user.name,
+      focus: user.focus,
+      joinedAt: user.joinedAt,
+      lastSeen: new Date(user.lastSeen).toISOString(),
+    }));
+
+  return {
+    room: room.id,
+    onlineCount: users.length,
+    focus: room.focus,
+    users,
+    updatedAt: new Date(room.updatedAt).toISOString(),
+    expiresInSeconds: Math.round(ROOM_TTL_MS / 1000),
+  };
+}
+
+function pruneRooms() {
+  const now = Date.now();
+  for (const [roomId, room] of rooms.entries()) {
+    for (const [userId, user] of room.users.entries()) {
+      if (now - user.lastSeen > ROOM_TTL_MS) room.users.delete(userId);
+    }
+    if (!room.users.size && now - room.updatedAt > ROOM_TTL_MS) rooms.delete(roomId);
+  }
+}
+
+function sanitizeRoom(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, 18);
+}
+
+function sanitizeUserId(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .slice(0, 36);
+}
+
+function sanitizeFocus(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.^=_-]/g, "")
+    .slice(0, 18);
+}
+
+function sanitizeName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .slice(0, 24);
+}
+
+function makeShortId(prefix) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-4)}`;
 }
 
 function isDirectRun() {

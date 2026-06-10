@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/全方位股市分析師設計.html"
+    }
+  ]
+}

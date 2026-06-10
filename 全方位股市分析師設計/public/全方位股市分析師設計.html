@@ -339,6 +339,85 @@
       box-shadow: var(--shadow);
     }
 
+    .collab-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      border: 1px solid rgba(34, 91, 143, 0.18);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f4f8fc;
+    }
+
+    .collab-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 900;
+    }
+
+    .collab-title i {
+      width: 18px;
+      height: 18px;
+      color: var(--blue);
+    }
+
+    .collab-status {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .collab-form {
+      display: grid;
+      grid-template-columns: minmax(110px, 0.8fr) minmax(130px, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .collab-form input {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: var(--panel);
+      color: var(--ink);
+      outline: 0;
+    }
+
+    .collab-users {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 180px;
+      min-height: 28px;
+      border: 1px solid rgba(34, 91, 143, 0.16);
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: white;
+      color: #24425f;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .user-chip span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .focus-label {
       display: flex;
       align-items: center;
@@ -862,7 +941,8 @@
       }
 
       .dashboard-grid,
-      .detail-grid {
+      .detail-grid,
+      .collab-panel {
         grid-template-columns: 1fr;
       }
 
@@ -940,7 +1020,8 @@
       }
 
       .search-row,
-      .converter {
+      .converter,
+      .collab-form {
         grid-template-columns: 1fr;
       }
 
@@ -1035,6 +1116,20 @@
           <span id="macroSummary">載入市場脈動中</span>
           <span>教育用途，請自行控管風險</span>
         </div>
+
+        <section class="collab-panel" aria-label="多人連線房間">
+          <div>
+            <div class="collab-title"><i data-lucide="users"></i><span>多人連線</span></div>
+            <div id="collabStatus" class="collab-status">建立房間中</div>
+            <div id="collabUsers" class="collab-users"></div>
+          </div>
+          <div class="collab-form">
+            <input id="roomInput" autocomplete="off" maxlength="18" aria-label="房間碼" placeholder="房間碼">
+            <input id="userNameInput" autocomplete="name" maxlength="24" aria-label="顯示名稱" placeholder="顯示名稱">
+            <button id="joinRoomButton" class="btn soft" type="button"><i data-lucide="log-in"></i><span>同步</span></button>
+            <button id="copyRoomButton" class="btn" type="button"><i data-lucide="copy"></i><span>複製連結</span></button>
+          </div>
+        </section>
 
         <div id="focusStrip" class="focus-strip"></div>
 
@@ -1275,6 +1370,10 @@
   <script>
     const API_BASE = location.protocol === "file:" ? "http://localhost:3000" : "";
     const AUTO_REFRESH_MS = 5 * 60 * 1000;
+    const COLLAB_POLL_MS = 8000;
+    const COLLAB_ROOM_KEY = "omnistock.collab.room";
+    const COLLAB_USER_KEY = "omnistock.collab.user";
+    const COLLAB_NAME_KEY = "omnistock.collab.name";
     const state = {
       dashboard: null,
       hotRange: "all",
@@ -1283,6 +1382,14 @@
       autoRefresh: true,
       autoTimer: null,
       loading: false,
+      collab: {
+        room: "",
+        userId: "",
+        name: "",
+        focus: "",
+        timer: null,
+        onlineCount: 0,
+      },
     };
 
     const els = {
@@ -1297,6 +1404,12 @@
       autoButton: document.querySelector("#autoButton"),
       connectionBadge: document.querySelector("#connectionBadge"),
       shareButton: document.querySelector("#shareButton"),
+      roomInput: document.querySelector("#roomInput"),
+      userNameInput: document.querySelector("#userNameInput"),
+      joinRoomButton: document.querySelector("#joinRoomButton"),
+      copyRoomButton: document.querySelector("#copyRoomButton"),
+      collabStatus: document.querySelector("#collabStatus"),
+      collabUsers: document.querySelector("#collabUsers"),
       macroSummary: document.querySelector("#macroSummary"),
       overallBadge: document.querySelector("#overallBadge"),
       focusStrip: document.querySelector("#focusStrip"),
@@ -1322,10 +1435,12 @@
     boot();
 
     function boot() {
+      initializeCollab();
       wireEvents();
       tickClock();
       setInterval(tickClock, 1000);
       startAutoRefresh();
+      startCollab();
       refreshDashboard();
       refreshIcons();
     }
@@ -1343,6 +1458,17 @@
         else stopAutoRefresh();
       });
       els.shareButton.addEventListener("click", shareRemoteLink);
+      els.joinRoomButton.addEventListener("click", joinCollabRoom);
+      els.copyRoomButton.addEventListener("click", copyRoomLink);
+      els.roomInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") joinCollabRoom();
+      });
+      els.userNameInput.addEventListener("change", () => {
+        state.collab.name = sanitizeDisplayName(els.userNameInput.value);
+        localStorage.setItem(COLLAB_NAME_KEY, state.collab.name);
+        syncCollab();
+      });
+      window.addEventListener("beforeunload", leaveCollab);
 
       els.searchButton.addEventListener("click", runSearch);
       els.searchInput.addEventListener("keydown", (event) => {
@@ -1703,6 +1829,7 @@
     }
 
     async function openDetail(symbol) {
+      setCollabFocus(symbol);
       els.detailModal.classList.add("open");
       els.detailLoading.classList.remove("hide");
       els.detailContent.classList.add("hide");
@@ -1832,8 +1959,155 @@
       return data;
     }
 
+    function initializeCollab() {
+      const params = new URLSearchParams(location.search);
+      const roomFromUrl = sanitizeRoomCode(params.get("room"));
+      const savedRoom = sanitizeRoomCode(localStorage.getItem(COLLAB_ROOM_KEY));
+      const savedUser = sanitizeUserId(localStorage.getItem(COLLAB_USER_KEY));
+      const savedName = sanitizeDisplayName(localStorage.getItem(COLLAB_NAME_KEY));
+
+      state.collab.room = roomFromUrl || savedRoom || generateRoomCode();
+      state.collab.userId = savedUser || generateUserId();
+      state.collab.name = savedName || defaultUserName();
+      localStorage.setItem(COLLAB_ROOM_KEY, state.collab.room);
+      localStorage.setItem(COLLAB_USER_KEY, state.collab.userId);
+      localStorage.setItem(COLLAB_NAME_KEY, state.collab.name);
+
+      els.roomInput.value = state.collab.room;
+      els.userNameInput.value = state.collab.name;
+      updateRoomUrl();
+      renderCollab({ onlineCount: 1, users: [], focus: "" });
+    }
+
+    function startCollab() {
+      stopCollab();
+      syncCollab();
+      state.collab.timer = window.setInterval(syncCollab, COLLAB_POLL_MS);
+    }
+
+    function stopCollab() {
+      if (state.collab.timer) window.clearInterval(state.collab.timer);
+      state.collab.timer = null;
+    }
+
+    async function syncCollab() {
+      if (!state.collab.room || !state.collab.userId) return;
+      try {
+        const query = new URLSearchParams({
+          room: state.collab.room,
+          user: state.collab.userId,
+          name: state.collab.name,
+          focus: state.collab.focus,
+        });
+        const data = await apiGet(`/api/room?${query.toString()}`);
+        state.collab.onlineCount = data.onlineCount || 0;
+        renderCollab(data);
+      } catch {
+        renderCollab({ offline: true, users: [], focus: state.collab.focus, onlineCount: 0 });
+      }
+    }
+
+    function joinCollabRoom() {
+      const nextRoom = sanitizeRoomCode(els.roomInput.value) || generateRoomCode();
+      state.collab.room = nextRoom;
+      state.collab.name = sanitizeDisplayName(els.userNameInput.value) || defaultUserName();
+      els.roomInput.value = state.collab.room;
+      els.userNameInput.value = state.collab.name;
+      localStorage.setItem(COLLAB_ROOM_KEY, state.collab.room);
+      localStorage.setItem(COLLAB_NAME_KEY, state.collab.name);
+      updateRoomUrl();
+      syncCollab();
+    }
+
+    async function copyRoomLink() {
+      const url = buildRoomUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        showConnectionMessage("房間連結已複製");
+      } catch {
+        showConnectionMessage("無法複製連結");
+      }
+    }
+
+    function setCollabFocus(symbol) {
+      const focus = sanitizeFocusSymbol(symbol);
+      if (!focus) return;
+      state.collab.focus = focus;
+      syncCollab();
+    }
+
+    function renderCollab(data) {
+      const focus = data.focus || state.collab.focus || "尚未選定";
+      if (data.offline) {
+        els.collabStatus.textContent = `房間 ${state.collab.room} · 同步暫停 · 焦點 ${focus}`;
+        els.collabUsers.innerHTML = `<span class="user-chip"><i data-lucide="wifi-off"></i><span>等待重新連線</span></span>`;
+        refreshIcons();
+        return;
+      }
+
+      const count = data.onlineCount || 0;
+      els.collabStatus.textContent = `房間 ${state.collab.room} · ${count} 人在線 · 焦點 ${focus}`;
+      const users = data.users || [];
+      els.collabUsers.innerHTML = users.length ? users.map((user) => `
+        <span class="user-chip" title="${escapeAttr(user.focus || "")}">
+          <i data-lucide="${user.id === state.collab.userId ? "user-check" : "user"}"></i>
+          <span>${escapeHtml(user.name || "User")}${user.focus ? ` · ${escapeHtml(user.focus)}` : ""}</span>
+        </span>
+      `).join("") : `<span class="user-chip"><i data-lucide="user"></i><span>${escapeHtml(state.collab.name)}</span></span>`;
+      refreshIcons();
+    }
+
+    function leaveCollab() {
+      if (!state.collab.room || !state.collab.userId) return;
+      const query = new URLSearchParams({ room: state.collab.room, user: state.collab.userId });
+      if (navigator.sendBeacon && location.protocol !== "file:") {
+        navigator.sendBeacon(`${API_BASE}/api/room/leave?${query.toString()}`);
+      }
+    }
+
+    function buildRoomUrl() {
+      const url = new URL(location.href);
+      url.searchParams.set("room", state.collab.room);
+      return url.toString();
+    }
+
+    function updateRoomUrl() {
+      if (location.protocol === "file:") return;
+      const url = new URL(location.href);
+      url.searchParams.set("room", state.collab.room);
+      history.replaceState(null, "", url);
+    }
+
+    function sanitizeRoomCode(value) {
+      return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 18);
+    }
+
+    function sanitizeUserId(value) {
+      return String(value || "").trim().replace(/[^a-zA-Z0-9-]/g, "").slice(0, 36);
+    }
+
+    function sanitizeDisplayName(value) {
+      return String(value || "").trim().replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 24);
+    }
+
+    function sanitizeFocusSymbol(value) {
+      return String(value || "").trim().toUpperCase().replace(/[^A-Z0-9.^=_-]/g, "").slice(0, 18);
+    }
+
+    function generateRoomCode() {
+      return `ROOM-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    }
+
+    function generateUserId() {
+      return `user-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function defaultUserName() {
+      return `用戶${state.collab.userId.slice(-4).toUpperCase()}`;
+    }
+
     async function shareRemoteLink() {
-      const url = location.href;
+      const url = buildRoomUrl();
       const title = document.title || "全方位股市分析師";
       try {
         if (navigator.share && location.protocol !== "file:") {
@@ -1850,7 +2124,7 @@
 
     function updateConnectionStatus(online) {
       if (online) {
-        const remote = location.protocol === "https:" || location.hostname.endsWith("netlify.app");
+        const remote = location.protocol === "https:" || location.hostname.endsWith("netlify.app") || location.hostname.endsWith("vercel.app");
         els.connectionBadge.textContent = remote ? "遠端連線正常" : "本機連線正常";
         els.connectionBadge.className = "badge connection-badge";
         return;
