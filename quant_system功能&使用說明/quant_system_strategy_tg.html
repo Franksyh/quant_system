@@ -1373,6 +1373,12 @@
       return url.href;
     }
 
+    function getInitialRoomCode() {
+      const queryRoom = new URLSearchParams(window.location.search).get("room");
+      const pathRoom = window.location.pathname.match(/^\/room\/([A-Za-z0-9]+)/)?.[1];
+      return normalizeRoomCode(queryRoom || pathRoom);
+    }
+
     function setRoomState(text, type = "") {
       const state = $("#roomStateText");
       state.textContent = text;
@@ -2259,7 +2265,7 @@
     function init() {
       const settings = getSettings();
       const roomSettings = getRoomSettings();
-      const urlRoom = normalizeRoomCode(new URLSearchParams(window.location.search).get("room"));
+      const urlRoom = getInitialRoomCode();
       $("#tgToken").value = settings.token || "";
       $("#tgChatId").value = settings.chatId || "";
       $("#roomName").value = roomSettings.name || "";
